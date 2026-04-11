@@ -1,12 +1,8 @@
 /**
  * PowerQuote API Server
  * 智能报价系统后端服务
- *
- * 启动：npm run api
- * 同时运行前端和API：npm run api:dev
  */
 
-// 加载环境变量（必须在其他 require 之前）
 require('dotenv').config();
 
 const jsonServer = require('json-server');
@@ -17,30 +13,14 @@ const { validateDemandParams } = require('./middleware/validator.cjs');
 
 const server = jsonServer.create();
 const router = jsonServer.router(path.join(__dirname, 'db/db.json'));
-const middlewares = jsonServer.defaults();
 
+// JSON Server 默认中间件（CORS等）
+server.use(jsonServer.defaults());
 // 解析 JSON body
 server.use(jsonServer.bodyParser);
 
-// CORS 已由 middlewares 默认启用
-
-// 托管前端静态文件
-const publicPath = path.join(__dirname, 'public');
-server.use(express.static(publicPath));
-
-// 前端路由 - SPA 支持
-server.get('*', (req, res) => {
-  const indexPath = path.join(publicPath, 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      // 如果 index.html 不存在，返回 API 404
-      res.status(404).json({ error: 'Not Found' });
-    }
-  });
-});
-
 // ============================================================
-// 公开路由（无需认证）
+// API 路由（必须放在静态文件之前）
 // ============================================================
 
 // 健康检查
@@ -53,7 +33,7 @@ server.get('/api/health', (req, res) => {
   });
 });
 
-// 获取产品目录（可公开访问，作为参考数据）
+// 获取产品目录
 server.get('/api/products', (req, res) => {
   const db = router.db;
   const products = db.get('products').value();
@@ -69,10 +49,6 @@ server.get('/api/products/:id', (req, res) => {
   res.json(product);
 });
 
-// ============================================================
-// 受保护路由（需要 API Key）
-// ============================================================
-
 // 需求匹配计算
 server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams, (req, res) => {
   const {
@@ -85,13 +61,11 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
     moduleFireFilter = 'ALL',
     cabinetFireFilter = 'ALL',
     lineTypeFilter = 'ALL',
-    specialRequirements = '',
   } = req.body;
 
   const db = router.db;
   const products = db.get('products').value();
 
-  // 生成候选方案
   const plans = [];
   let planId = Date.now();
 
@@ -100,7 +74,6 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
       if (!product.specs) continue;
 
       for (const lineType of ['2线', '3线']) {
-        // 过滤逻辑
         if (lineTypeFilter !== 'ALL' && lineTypeFilter !== lineType) continue;
 
         const moduleFire = product.specs.moduleFire || '否';
@@ -115,7 +88,6 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
           if ((cabinetFire === '是') !== fireRequired) continue;
         }
 
-        // 计算参数
         const cabinetCount = Math.ceil(moduleCount / product.specs.modulesPerCabinet);
         const moduleEnergyKWh = (product.specs.modulePowerW / 1000) / product.specs.moduleDischargeRatio;
         const estimatedEnergyKWh = moduleCount * moduleEnergyKWh;
@@ -124,7 +96,6 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
         const estimatedCurrent = (targetPowerKw * 1000) / estimatedVoltage;
         const estimatedBackupMinutes = (estimatedEnergyKWh / targetPowerKw) * 60;
 
-        // Demo展示用：差异化状态标签
         const demoStatusIndex = (moduleCount + (moduleFire === '是' ? 2 : 0) + (lineType === '3线' ? 1 : 0)) % 10;
         const demoLabels = [
           { label: '推荐方案', detail: '柜数更少、边界更稳、适合优先推进。' },
@@ -168,7 +139,6 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
     }
   }
 
-  // 按评分排序，最高分的标记为推荐
   plans.sort((a, b) => b.rankScore - a.rankScore);
   if (plans[0]) {
     plans[0].recommended = true;
@@ -176,7 +146,6 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
     plans[0].analysisStatusDetail = '柜数更少、边界更稳、适合优先推进。';
   }
 
-  // 选择最优产品族
   const topPlans = plans.slice(0, 5);
   const productCounts = {};
   for (const p of topPlans) {
@@ -185,7 +154,6 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
   const winnerId = Object.entries(productCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
   const winner = products.find(p => p.id === winnerId) || products[0];
 
-  // 保存需求记录
   const demandRecord = {
     id: `demand_${Date.now()}`,
     createdAt: new Date().toISOString(),
@@ -212,14 +180,12 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
   });
 });
 
-// 获取需求记录列表
 server.get('/api/demand-matching', requireAuth, (req, res) => {
   const db = router.db;
   const records = db.get('demandMatching.records').value();
   res.json(records);
 });
 
-// 获取单个需求记录
 server.get('/api/demand-matching/:id', requireAuth, (req, res) => {
   const db = router.db;
   const record = db.get('demandMatching.records').find({ id: req.params.id }).value();
@@ -229,11 +195,9 @@ server.get('/api/demand-matching/:id', requireAuth, (req, res) => {
   res.json(record);
 });
 
-// 报价单接口
 server.get('/api/quotations', requireAuth, (req, res) => {
   const db = router.db;
-  const quotations = db.get('quotations.records').value();
-  res.json(quotations);
+  res.json(db.get('quotations.records').value());
 });
 
 server.post('/api/quotations', requireAuth, (req, res) => {
@@ -256,30 +220,24 @@ server.get('/api/quotations/:id', requireAuth, (req, res) => {
   res.json(quotation);
 });
 
-// ============================================================
-// 路由重写（JSON Server 标准路径）
-// ============================================================
-server.use(jsonServer.rewriter({
-  '/api/products': '/products',
-  '/api/products/:id': '/products/:id',
-  '/api/demand-matching': '/demandMatching/records',
-  '/api/demand-matching/:id': '/demandMatching/records/:id',
-  '/api/demand-matching/calculate': '/demandMatching/records',
-  '/api/candidate-plans/:demandId': '/candidatePlans/:demandId',
-  '/api/quotations': '/quotations/records',
-  '/api/quotations/:id': '/quotations/records/:id',
-}));
-
-// JSON Server 路由（处理 GET/POST/DELETE 等）
+// JSON Server 路由（处理其他 REST 路由）
 server.use(router);
+
+// ============================================================
+// 前端静态文件（必须在 API 路由之后）
+// ============================================================
+const publicPath = path.join(__dirname, 'public');
+server.use(express.static(publicPath));
+
+// SPA fallback - 对于所有其他路由返回 index.html
+server.get('*', (req, res) => {
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
 
 // 错误处理
 server.use((err, req, res, next) => {
   console.error('Server Error:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: err.message,
-  });
+  res.status(500).json({ error: 'Internal Server Error', message: err.message });
 });
 
 const PORT = process.env.PORT || 3001;
