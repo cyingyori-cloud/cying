@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { Dashboard } from './pages/Dashboard';
@@ -16,11 +16,6 @@ import { QuotationList } from './pages/QuotationList';
 import { CpqQuotation } from './pages/CpqQuotation';
 import FxiaokeEmbed from './pages/FxiaokeEmbed';
 import { roleViewMap } from './data/roleViews';
-
-// 检查是否为 Fxiaoke 嵌入模式
-function isFxiaokeEmbedMode() {
-  return window.location.pathname === '/fxiaoke' || window.location.hash.startsWith('#/fxiaoke');
-}
 import { useAppStore } from './store/appStore';
 
 function PageRouter() {
@@ -57,9 +52,23 @@ function PageRouter() {
 
 export default function App() {
   const { activeTab } = useAppStore();
+  const [isEmbedMode, setIsEmbedMode] = useState(false);
+
+  useEffect(() => {
+    // 检查是否为 Fxiaoke 嵌入模式
+    const checkEmbedMode = () => {
+      const isFx = window.location.pathname === '/fxiaoke' || 
+                    window.location.hash.startsWith('#/fxiaoke');
+      setIsEmbedMode(isFx);
+    };
+    checkEmbedMode();
+    // 监听 hash 变化
+    window.addEventListener('hashchange', checkEmbedMode);
+    return () => window.removeEventListener('hashchange', checkEmbedMode);
+  }, []);
 
   // Fxiaoke 嵌入模式 - 不显示侧边栏和顶部栏
-  if (isFxiaokeEmbedMode()) {
+  if (isEmbedMode) {
     return <FxiaokeEmbed />;
   }
 
