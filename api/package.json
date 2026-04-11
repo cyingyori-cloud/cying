@@ -1,0 +1,17 @@
+{
+  "name": "powerquote-api",
+  "version": "1.0.0",
+  "description": "PowerQuote API Server",
+  "main": "index.cjs",
+  "scripts": {
+    "start": "node index.cjs",
+    "dev": "node index.cjs"
+  },
+  "dependencies": {
+    "json-server": "^0.17.4",
+    "dotenv": "^17.4.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

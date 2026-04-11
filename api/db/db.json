@@ -1,0 +1,364 @@
+{
+  "products": [
+    {
+      "id": "P001",
+      "modelCode": "PAI-200-3AIDC",
+      "modelName": "PAI-200kW AIDC 模块化 UPS",
+      "classification": "AIDC",
+      "ratedPowerKw": 200,
+      "ratedEnergyKWh": 200,
+      "basePrice": 280000,
+      "baseCost": 230000,
+      "parallelCapability": "支持并联",
+      "warrantyYears": 3,
+      "certifications": [
+        "UL9540A",
+        "IEC62619"
+      ],
+      "status": "active",
+      "specs": {
+        "modulesPerCabinet": 4,
+        "modulePowerW": 50,
+        "moduleDischargeRatio": 1.25,
+        "moduleVoltageV": 51.2,
+        "moduleFire": "否",
+        "cabinetFire": "是",
+        "moduleType": "51.2V100Ah"
+      }
+    },
+    {
+      "id": "P002",
+      "modelCode": "PAI-100-3CIB",
+      "modelName": "PAI-100kW 工商业储能一体机",
+      "classification": "工商业",
+      "ratedPowerKw": 100,
+      "ratedEnergyKWh": 215,
+      "basePrice": 320000,
+      "baseCost": 262000,
+      "parallelCapability": "支持并联",
+      "warrantyYears": 5,
+      "certifications": [
+        "UL9540A",
+        "GB/T 36276"
+      ],
+      "status": "active",
+      "specs": {
+        "modulesPerCabinet": 4,
+        "modulePowerW": 50,
+        "moduleDischargeRatio": 1.25,
+        "moduleVoltageV": 51.2,
+        "moduleFire": "是",
+        "cabinetFire": "是",
+        "moduleType": "51.2V200Ah"
+      }
+    },
+    {
+      "id": "P003",
+      "modelCode": "PAI-50-3RES",
+      "modelName": "PAI-50kW 住宅储能一体机",
+      "classification": "住宅",
+      "ratedPowerKw": 50,
+      "ratedEnergyKWh": 150,
+      "basePrice": 180000,
+      "baseCost": 148000,
+      "parallelCapability": "不支持并联",
+      "warrantyYears": 5,
+      "certifications": [
+        "IEC62619",
+        "UN38.3"
+      ],
+      "status": "active",
+      "specs": {
+        "modulesPerCabinet": 4,
+        "modulePowerW": 25,
+        "moduleDischargeRatio": 1.25,
+        "moduleVoltageV": 51.2,
+        "moduleFire": "是",
+        "cabinetFire": "否",
+        "moduleType": "51.2V100Ah"
+      }
+    },
+    {
+      "id": "P004",
+      "modelCode": "PAI-200-3EMH",
+      "modelName": "PAI-200kW 应急发电模块",
+      "classification": "应急",
+      "ratedPowerKw": 200,
+      "ratedEnergyKWh": 300,
+      "basePrice": 420000,
+      "baseCost": 345000,
+      "parallelCapability": "支持并联",
+      "warrantyYears": 3,
+      "certifications": [
+        "UL9540A",
+        "IEC62619",
+        "GB/T 36276"
+      ],
+      "status": "active",
+      "specs": {
+        "modulesPerCabinet": 6,
+        "modulePowerW": 50,
+        "moduleDischargeRatio": 1.5,
+        "moduleVoltageV": 48,
+        "moduleFire": "否",
+        "cabinetFire": "是",
+        "moduleType": "48V100Ah"
+      }
+    },
+    {
+      "id": "P005",
+      "modelCode": "PAI-100-3RES",
+      "modelName": "PAI-100kW 分布式储能系统",
+      "classification": "分布式",
+      "ratedPowerKw": 100,
+      "ratedEnergyKWh": 250,
+      "basePrice": 380000,
+      "baseCost": 312000,
+      "parallelCapability": "支持并联",
+      "warrantyYears": 5,
+      "certifications": [
+        "UL9540A",
+        "IEC62619"
+      ],
+      "status": "active",
+      "specs": {
+        "modulesPerCabinet": 5,
+        "modulePowerW": 40,
+        "moduleDischargeRatio": 1.25,
+        "moduleVoltageV": 51.2,
+        "moduleFire": "是",
+        "cabinetFire": "是",
+        "moduleType": "51.2V160Ah"
+      }
+    }
+  ],
+  "demandMatching": {
+    "records": [
+      {
+        "id": "demand_1775883951311",
+        "createdAt": "2026-04-11T05:05:51.311Z",
+        "input": {
+          "targetPowerKw": 420,
+          "targetEnergyKWh": 60,
+          "backupMinutes": 15,
+          "dcVoltageMin": 520,
+          "dcVoltageMax": 680,
+          "moduleCounts": [
+            8,
+            9,
+            10
+          ]
+        },
+        "result": {
+          "plans": [
+            {
+              "id": "plan_1775883951310",
+              "skuCode": "P001-M8-D",
+              "productId": "P001",
+              "productName": "PAI-200kW AIDC 模块化 UPS",
+              "moduleCount": 8,
+              "cabinetCount": 2,
+              "lineType": "2线",
+              "moduleFire": "否",
+              "cabinetFire": "是",
+              "estimatedEnergyKWh": 0.32,
+              "estimatedVoltage": 327.7,
+              "estimatedCurrent": 1281.74,
+              "estimatedBackupMinutes": 0,
+              "analysisStatusLabel": "推荐方案",
+              "analysisStatusDetail": "柜数更少、边界更稳、适合优先推进。",
+              "status": "INVALID",
+              "rankScore": 50,
+              "recommended": true
+            },
+            {
+              "id": "plan_1775883951311",
+              "skuCode": "P001-M8-S",
+              "productId": "P001",
+              "productName": "PAI-200kW AIDC 模块化 UPS",
+              "moduleCount": 8,
+              "cabinetCount": 2,
+              "lineType": "3线",
+              "moduleFire": "否",
+              "cabinetFire": "是",
+              "estimatedEnergyKWh": 0.32,
+              "estimatedVoltage": 409.6,
+              "estimatedCurrent": 1025.39,
+              "estimatedBackupMinutes": 0,
+              "analysisStatusLabel": "超限需复核",
+              "analysisStatusDetail": "方案超出关键边界，不建议直接报价。",
+              "status": "INVALID",
+              "rankScore": 50
+            },
+            {
+              "id": "plan_1775883951312",
+              "skuCode": "P002-M8-D",
+              "productId": "P002",
+              "productName": "PAI-100kW 工商业储能一体机",
+              "moduleCount": 8,
+              "cabinetCount": 2,
+              "lineType": "2线",
+              "moduleFire": "是",
+              "cabinetFire": "是",
+              "estimatedEnergyKWh": 0.32,
+              "estimatedVoltage": 327.7,
+              "estimatedCurrent": 1281.74,
+              "estimatedBackupMinutes": 0,
+              "analysisStatusLabel": "推荐方案",
+              "analysisStatusDetail": "柜数更少、边界更稳、适合优先推进。",
+              "status": "VALID",
+              "rankScore": 50
+            },
+            {
+              "id": "plan_1775883951313",
+              "skuCode": "P002-M8-S",
+              "productId": "P002",
+              "productName": "PAI-100kW 工商业储能一体机",
+              "moduleCount": 8,
+              "cabinetCount": 2,
+              "lineType": "3线",
+              "moduleFire": "是",
+              "cabinetFire": "是",
+              "estimatedEnergyKWh": 0.32,
+              "estimatedVoltage": 409.6,
+              "estimatedCurrent": 1025.39,
+              "estimatedBackupMinutes": 0,
+              "analysisStatusLabel": "可直接推进",
+              "analysisStatusDetail": "电压、电流与时长均处于建议边界内。",
+              "status": "VALID",
+              "rankScore": 50
+            },
+            {
+              "id": "plan_1775883951316",
+              "skuCode": "P004-M8-D",
+              "productId": "P004",
+              "productName": "PAI-200kW 应急发电模块",
+              "moduleCount": 8,
+              "cabinetCount": 2,
+              "lineType": "2线",
+              "moduleFire": "否",
+              "cabinetFire": "是",
+              "estimatedEnergyKWh": 0.27,
+              "estimatedVoltage": 307.2,
+              "estimatedCurrent": 1367.19,
+              "estimatedBackupMinutes": 0,
+              "analysisStatusLabel": "电流超界",
+              "analysisStatusDetail": "最大放电电流超过 600A，不建议直接报价。",
+              "status": "INVALID",
+              "rankScore": 50
+            },
+            {
+              "id": "plan_1775883951317",
+              "skuCode": "P004-M8-S",
+              "productId": "P004",
+              "productName": "PAI-200kW 应急发电模块",
+              "moduleCount": 8,
+              "cabinetCount": 2,
+              "lineType": "3线",
+              "moduleFire": "否",
+              "cabinetFire": "是",
+              "estimatedEnergyKWh": 0.27,
+              "estimatedVoltage": 384,
+              "estimatedCurrent": 1093.75,
+              "estimatedBackupMinutes": 0,
+              "analysisStatusLabel": "超限需复核",
+              "analysisStatusDetail": "方案超出关键边界，不建议直接报价。",
+              "status": "INVALID",
+              "rankScore": 50
+            },
+            {
+              "id": "plan_1775883951320",
+              "skuCode": "P001-M9-D",
+              "productId": "P001",
+              "productName": "PAI-200kW AIDC 模块化 UPS",
+              "moduleCount": 9,
+              "cabinetCount": 3,
+              "lineType": "2线",
+              "moduleFire": "否",
+              "cabinetFire": "是",
+              "estimatedEnergyKWh": 0.36,
+              "estimatedVoltage": 368.6,
+              "estimatedCurrent": 1139.32,
+              "estimatedBackupMinutes": 0.1,
+              "analysisStatusLabel": "超限需复核",
+              "analysisStatusDetail": "方案超出关键边界，不建议直接报价。",
+              "status": "INVALID",
+              "rankScore": 48
+            },
+            {
+              "id": "plan_1775883951321",
+              "skuCode": "P001-M9-S",
+              "productId": "P001",
+              "productName": "PAI-200kW AIDC 模块化 UPS",
+              "moduleCount": 9,
+              "cabinetCount": 3,
+              "lineType": "3线",
+              "moduleFire": "否",
+              "cabinetFire": "是",
+              "estimatedEnergyKWh": 0.36,
+              "estimatedVoltage": 460.8,
+              "estimatedCurrent": 911.46,
+              "estimatedBackupMinutes": 0.1,
+              "analysisStatusLabel": "推荐方案",
+              "analysisStatusDetail": "柜数更少、边界更稳、适合优先推进。",
+              "status": "VALID",
+              "rankScore": 48
+            },
+            {
+              "id": "plan_1775883951322",
+              "skuCode": "P002-M9-D",
+              "productId": "P002",
+              "productName": "PAI-100kW 工商业储能一体机",
+              "moduleCount": 9,
+              "cabinetCount": 3,
+              "lineType": "2线",
+              "moduleFire": "是",
+              "cabinetFire": "是",
+              "estimatedEnergyKWh": 0.36,
+              "estimatedVoltage": 368.6,
+              "estimatedCurrent": 1139.32,
+              "estimatedBackupMinutes": 0.1,
+              "analysisStatusLabel": "可直接推进",
+              "analysisStatusDetail": "电压、电流与时长均处于建议边界内。",
+              "status": "VALID",
+              "rankScore": 48
+            },
+            {
+              "id": "plan_1775883951323",
+              "skuCode": "P002-M9-S",
+              "productId": "P002",
+              "productName": "PAI-100kW 工商业储能一体机",
+              "moduleCount": 9,
+              "cabinetCount": 3,
+              "lineType": "3线",
+              "moduleFire": "是",
+              "cabinetFire": "是",
+              "estimatedEnergyKWh": 0.36,
+              "estimatedVoltage": 460.8,
+              "estimatedCurrent": 911.46,
+              "estimatedBackupMinutes": 0.1,
+              "analysisStatusLabel": "时长临界",
+              "analysisStatusDetail": "备电时长接近目标边界，可作为备选方案。",
+              "status": "WARNING",
+              "rankScore": 48
+            }
+          ],
+          "winner": {
+            "id": "P001",
+            "modelName": "PAI-200kW AIDC 模块化 UPS"
+          },
+          "stats": {
+            "totalPlans": 30,
+            "validPlans": 15,
+            "warningPlans": 9,
+            "invalidPlans": 6
+          }
+        }
+      }
+    ]
+  },
+  "quotations": {
+    "records": []
+  },
+  "candidatePlans": {}
+}
