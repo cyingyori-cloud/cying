@@ -1,0 +1,44 @@
+# PowerQuote API Docker Compose 配置
+# 使用方式: docker-compose up -d
+
+version: '3.8'
+
+services:
+  # REST API 服务
+  api:
+    build: .
+    container_name: powerquote-api
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - AUTH_DISABLED=false
+      # API Keys（生产环境请使用更安全的方式管理）
+      - API_KEY_1=${API_KEY_1:-your-api-key-here}
+      - API_KEY_2=${API_KEY_2:-}
+      - API_KEY_3=${API_KEY_3:-}
+    volumes:
+      # 数据持久化（Mock 数据文件）
+      - ./server/db:/app/server/db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # MCP Server（供 AI 助手使用）
+  # 注意：MCP Server 通过 stdio 通信，不通过 HTTP
+  # 需要在 AI 客户端（如 WorkBuddy）的 MCP 配置中指定
+  mcp:
+    build: .
+    container_name: powerquote-mcp
+    entrypoint: ["node", "server/mcp/powerquote-mcp.cjs"]
+    environment:
+      - API_BASE_URL=http://api:3001
+      - API_KEY_1=${API_KEY_1:-your-api-key-here}
+    volumes:
+      - ./server/mcp:/app/server/mcp
+    profiles:
+      - mcp  # 使用 docker-compose --profile mcp 启动
