@@ -14,7 +14,13 @@ import { ForwardConfig } from './pages/ForwardConfig';
 import { ReverseConfig } from './pages/ReverseConfig';
 import { QuotationList } from './pages/QuotationList';
 import { CpqQuotation } from './pages/CpqQuotation';
+import FxiaokeEmbed from './pages/FxiaokeEmbed';
 import { roleViewMap } from './data/roleViews';
+
+// 检查是否为 Fxiaoke 嵌入模式
+function isFxiaokeEmbedMode() {
+  return window.location.pathname === '/fxiaoke' || window.location.hash.startsWith('#/fxiaoke');
+}
 import { useAppStore } from './store/appStore';
 
 function PageRouter() {
@@ -51,6 +57,11 @@ function PageRouter() {
 
 export default function App() {
   const { activeTab } = useAppStore();
+
+  // Fxiaoke 嵌入模式 - 不显示侧边栏和顶部栏
+  if (isFxiaokeEmbedMode()) {
+    return <FxiaokeEmbed />;
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
