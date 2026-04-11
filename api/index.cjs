@@ -11,6 +11,7 @@ require('dotenv').config();
 
 const jsonServer = require('json-server');
 const path = require('path');
+const express = require('express');
 const { requireAuth } = require('./middleware/auth.cjs');
 const { validateDemandParams } = require('./middleware/validator.cjs');
 
@@ -22,6 +23,21 @@ const middlewares = jsonServer.defaults();
 server.use(jsonServer.bodyParser);
 
 // CORS 已由 middlewares 默认启用
+
+// 托管前端静态文件
+const publicPath = path.join(__dirname, 'public');
+server.use(express.static(publicPath));
+
+// 前端路由 - SPA 支持
+server.get('*', (req, res) => {
+  const indexPath = path.join(publicPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      // 如果 index.html 不存在，返回 API 404
+      res.status(404).json({ error: 'Not Found' });
+    }
+  });
+});
 
 // ============================================================
 // 公开路由（无需认证）

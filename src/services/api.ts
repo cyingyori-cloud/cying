@@ -3,8 +3,8 @@
  * API 服务层 - 支持切换 Mock 和真实 API
  */
 
-// API 基础配置
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+// API 基础配置 - 使用相对路径（部署时）
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // 是否使用 Mock 数据（开发环境可设为 true）
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true' || false;
