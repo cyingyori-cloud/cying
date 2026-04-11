@@ -7,7 +7,7 @@ WORKDIR /app
 COPY api/package*.json ./
 
 # 安装依赖
-RUN npm ci --only=production
+RUN npm install
 
 # 复制 API 代码
 COPY api/ ./
