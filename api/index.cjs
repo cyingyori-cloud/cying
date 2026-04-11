@@ -33,165 +33,6 @@ server.get('/api/health', (req, res) => {
   });
 });
 
-// ============================================================
-// MCP (Model Context Protocol) 接口
-// ============================================================
-
-const MCP_TOOLS = [
-  {
-    name: 'calculate_demand_matching',
-    description: '根据客户需求参数计算匹配的方案列表。这是智能报价的核心功能。',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        targetPowerKw: { type: 'number', description: '目标功率 (kW)' },
-        targetEnergyKWh: { type: 'number', description: '目标容量 (kWh)' },
-        backupMinutes: { type: 'number', description: '备电时长 (分钟)' },
-        dcVoltageMin: { type: 'number', description: 'DC最低电压' },
-        dcVoltageMax: { type: 'number', description: 'DC最高电压' },
-        moduleCounts: { type: 'array', items: { type: 'number' }, description: '模组数量列表' }
-      },
-      required: ['targetPowerKw', 'targetEnergyKWh', 'backupMinutes']
-    }
-  },
-  {
-    name: 'list_products',
-    description: '查询产品目录，返回所有可用的产品列表及其规格参数。',
-    inputSchema: { type: 'object', properties: {} }
-  },
-  {
-    name: 'get_product',
-    description: '根据产品ID查询单个产品的详细信息。',
-    inputSchema: {
-      type: 'object',
-      properties: { productId: { type: 'string', description: '产品ID' } },
-      required: ['productId']
-    }
-  }
-];
-
-// MCP 初始化
-server.post('/mcp', async (req, res) => {
-  const { method, params } = req.body;
-  
-  switch (method) {
-    case 'initialize':
-      return res.json({
-        protocolVersion: '2024-11-05',
-        capabilities: { tools: {} },
-        serverInfo: { name: 'powerquote-mcp', version: '1.0.0' }
-      });
-
-    case 'tools/list':
-      return res.json({ tools: MCP_TOOLS });
-
-    case 'tools/call':
-      const { name, arguments: args } = params;
-      
-      try {
-        let result;
-        switch (name) {
-          case 'calculate_demand_matching':
-            // 调用需求匹配计算（绕过认证用于 MCP）
-            result = await calculateDemandMatching(args, router);
-            break;
-          case 'list_products':
-            result = router.db.get('products').value();
-            break;
-          case 'get_product':
-            result = router.db.get('products').find({ id: args.productId }).value() || { error: 'Product not found' };
-            break;
-          default:
-            throw new Error(`Unknown tool: ${name}`);
-        }
-        return res.json({ content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] });
-      } catch (error) {
-        return res.json({ content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true });
-      }
-
-    default:
-      return res.status(400).json({ error: `Unknown method: ${method}` });
-  }
-});
-
-// MCP 健康检查
-server.get('/mcp', (req, res) => {
-  res.json({
-    service: 'PowerQuote MCP Server',
-    version: '1.0.0',
-    tools: MCP_TOOLS.map(t => t.name)
-  });
-});
-
-// MCP 需求匹配计算函数
-async function calculateDemandMatching(args, router) {
-  const {
-    targetPowerKw,
-    targetEnergyKWh,
-    backupMinutes,
-    dcVoltageMin = 520,
-    dcVoltageMax = 680,
-    moduleCounts = [8, 9, 10, 12]
-  } = args;
-
-  const products = router.db.get('products').value();
-  const plans = [];
-  let planId = Date.now();
-
-  for (const moduleCount of moduleCounts) {
-    for (const product of products) {
-      if (!product.specs) continue;
-      for (const lineType of ['2线', '3线']) {
-        const demoStatusIndex = (moduleCount + (lineType === '3线' ? 1 : 0)) % 8;
-        const demoLabels = [
-          { label: '推荐方案', detail: '柜数更少、边界更稳、适合优先推进' },
-          { label: '可直接推进', detail: '电压、电流与时长均在边界内' },
-          { label: '时长临界', detail: '备电时长接近目标边界' },
-          { label: '电流边界', detail: '已接近 600A 边界' },
-          { label: '需补充说明', detail: '需写清客户特殊要求' },
-          { label: '需技术确认', detail: '存在技术边界情况' },
-          { label: '电压超界', detail: '超出客户要求电压' },
-          { label: '超限需复核', detail: '超出关键边界，不建议直接报价' },
-        ];
-        const demoStatus = demoLabels[demoStatusIndex];
-        plans.push({
-          id: `plan_${planId++}`,
-          skuCode: `${product.modelCode || 'P001'}-M${moduleCount}-${lineType === '2线' ? '2L' : '3L'}`,
-          productId: product.id,
-          productName: product.modelName,
-          moduleCount,
-          cabinetCount: Math.max(1, Math.round(targetEnergyKWh / (moduleCount * 1.86))),
-          lineType,
-          moduleFire: product.specs.moduleFire === '是',
-          cabinetFire: product.specs.cabinetFire === '是',
-          estimatedVoltage: Math.round(moduleCount * 44.8),
-          estimatedCurrent: Math.round((targetPowerKw * 1000) / (moduleCount * 44.8 * 0.92)),
-          estimatedEnergyKWh: Math.round(moduleCount * 1.86),
-          analysisStatusLabel: demoStatus.label,
-          analysisStatusDetail: demoStatus.detail,
-          status: demoStatus.label === '电压超界' || demoStatus.label === '超限需复核' ? 'INVALID' : 'VALID',
-          rankScore: Math.round(100 - Math.abs(moduleCount - 8) * 5),
-        });
-      }
-    }
-  }
-
-  plans.sort((a, b) => b.rankScore - a.rankScore);
-  if (plans[0]) {
-    plans[0].recommended = true;
-    plans[0].analysisStatusLabel = '推荐方案';
-    plans[0].analysisStatusDetail = '柜数更少、边界更稳、适合优先推进';
-  }
-
-  return {
-    demandId: `demand_${Date.now()}`,
-    input: args,
-    plans: plans.slice(0, 10),
-    winner: plans[0] ? { id: plans[0].productId, name: plans[0].productName } : null,
-    stats: { totalPlans: plans.length, validPlans: plans.filter(p => p.status === 'VALID').length }
-  };
-}
-
 // 获取产品目录
 server.get('/api/products', (req, res) => {
   const db = router.db;
@@ -383,7 +224,141 @@ server.get('/api/quotations/:id', requireAuth, (req, res) => {
 server.use(router);
 
 // ============================================================
-// 前端静态文件（必须在 API 路由之后）
+// MCP (Model Context Protocol) 接口（必须在静态文件之前）
+// ============================================================
+
+const MCP_TOOLS = [
+  {
+    name: 'calculate_demand_matching',
+    description: '根据客户需求参数计算匹配的方案列表。这是智能报价的核心功能。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        targetPowerKw: { type: 'number', description: '目标功率 (kW)' },
+        targetEnergyKWh: { type: 'number', description: '目标容量 (kWh)' },
+        backupMinutes: { type: 'number', description: '备电时长 (分钟)' },
+        dcVoltageMin: { type: 'number', description: 'DC最低电压' },
+        dcVoltageMax: { type: 'number', description: 'DC最高电压' },
+        moduleCounts: { type: 'array', items: { type: 'number' }, description: '模组数量列表' }
+      },
+      required: ['targetPowerKw', 'targetEnergyKWh', 'backupMinutes']
+    }
+  },
+  {
+    name: 'list_products',
+    description: '查询产品目录，返回所有可用的产品列表及其规格参数。',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'get_product',
+    description: '根据产品ID查询单个产品的详细信息。',
+    inputSchema: {
+      type: 'object',
+      properties: { productId: { type: 'string', description: '产品ID' } },
+      required: ['productId']
+    }
+  }
+];
+
+// MCP 初始化
+server.post('/mcp', (req, res) => {
+  const { method, params } = req.body;
+  const db = router.db;
+  
+  switch (method) {
+    case 'initialize':
+      return res.json({
+        protocolVersion: '2024-11-05',
+        capabilities: { tools: {} },
+        serverInfo: { name: 'powerquote-mcp', version: '1.0.0' }
+      });
+
+    case 'tools/list':
+      return res.json({ tools: MCP_TOOLS });
+
+    case 'tools/call':
+      const { name, arguments: args } = params;
+      
+      try {
+        let result;
+        switch (name) {
+          case 'calculate_demand_matching': {
+            const { targetPowerKw, targetEnergyKWh, backupMinutes, dcVoltageMin = 520, dcVoltageMax = 680, moduleCounts = [8, 9, 10, 12] } = args;
+            const products = db.get('products').value();
+            const plans = [];
+            let planId = Date.now();
+            
+            for (const moduleCount of moduleCounts) {
+              for (const product of products) {
+                if (!product.specs) continue;
+                for (const lineType of ['2线', '3线']) {
+                  const demoStatusIndex = (moduleCount + (lineType === '3线' ? 1 : 0)) % 8;
+                  const demoLabels = [
+                    { label: '推荐方案', detail: '柜数更少、边界更稳、适合优先推进' },
+                    { label: '可直接推进', detail: '电压、电流与时长均在边界内' },
+                    { label: '时长临界', detail: '备电时长接近目标边界' },
+                    { label: '电流边界', detail: '已接近 600A 边界' },
+                    { label: '需补充说明', detail: '需写清客户特殊要求' },
+                    { label: '需技术确认', detail: '存在技术边界情况' },
+                    { label: '电压超界', detail: '超出客户要求电压' },
+                    { label: '超限需复核', detail: '超出关键边界，不建议直接报价' },
+                  ];
+                  const demoStatus = demoLabels[demoStatusIndex];
+                  plans.push({
+                    id: `plan_${planId++}`,
+                    skuCode: `${product.modelCode || 'P001'}-M${moduleCount}-${lineType === '2线' ? '2L' : '3L'}`,
+                    productId: product.id,
+                    productName: product.modelName,
+                    moduleCount,
+                    cabinetCount: Math.max(1, Math.round(targetEnergyKWh / (moduleCount * 1.86))),
+                    lineType,
+                    estimatedVoltage: Math.round(moduleCount * 44.8),
+                    estimatedCurrent: Math.round((targetPowerKw * 1000) / (moduleCount * 44.8 * 0.92)),
+                    analysisStatusLabel: demoStatus.label,
+                    analysisStatusDetail: demoStatus.detail,
+                    status: demoStatus.label === '电压超界' || demoStatus.label === '超限需复核' ? 'INVALID' : 'VALID',
+                    rankScore: Math.round(100 - Math.abs(moduleCount - 8) * 5),
+                  });
+                }
+              }
+            }
+            
+            plans.sort((a, b) => b.rankScore - a.rankScore);
+            if (plans[0]) {
+              plans[0].recommended = true;
+              plans[0].analysisStatusLabel = '推荐方案';
+              plans[0].analysisStatusDetail = '柜数更少、边界更稳、适合优先推进';
+            }
+            
+            result = { demandId: `demand_${Date.now()}`, plans: plans.slice(0, 10), stats: { totalPlans: plans.length, validPlans: plans.filter(p => p.status === 'VALID').length } };
+            break;
+          }
+          case 'list_products':
+            result = db.get('products').value();
+            break;
+          case 'get_product':
+            result = db.get('products').find({ id: args.productId }).value() || { error: 'Product not found' };
+            break;
+          default:
+            throw new Error(`Unknown tool: ${name}`);
+        }
+        return res.json({ content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] });
+      } catch (error) {
+        return res.json({ content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true });
+      }
+
+    default:
+      return res.status(400).json({ error: `Unknown method: ${method}` });
+  }
+});
+
+// MCP 健康检查
+server.get('/mcp', (req, res) => {
+  res.json({ service: 'PowerQuote MCP Server', version: '1.0.0', tools: MCP_TOOLS.map(t => t.name) });
+});
+
+// ============================================================
+// 前端静态文件
 // ============================================================
 const publicPath = path.join(__dirname, 'public');
 server.use(express.static(publicPath));
