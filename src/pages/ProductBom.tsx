@@ -28,8 +28,8 @@ function BomNode({ node, depth = 0 }: { node: BomItem; depth?: number }) {
             ? (expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />)
             : <div className="w-4 h-px bg-slate-200 ml-1" />}
         </div>
-        <div className={`p-1.5 rounded-lg shrink-0 ${depth === 0 ? 'bg-blue-50' : 'bg-slate-100'}`}>
-          <Package size={13} className={depth === 0 ? 'text-blue-500' : 'text-slate-500'} />
+        <div className={`p-1.5 rounded-lg shrink-0 ${depth === 0 ? 'bg-brand-50' : 'bg-slate-100'}`}>
+          <Package size={13} className={depth === 0 ? 'text-brand-500' : 'text-slate-500'} />
         </div>
         <div className="flex-1 min-w-0 grid grid-cols-12 gap-2 items-center">
           <div className="col-span-4">
@@ -74,9 +74,9 @@ export function ProductBom() {
 
   return (
     <div className="p-6 space-y-4">
-      <Card className="border border-blue-100 bg-blue-50/60 p-4">
+      <Card className="border border-brand-100 bg-brand-50/60 p-4">
         <div className="flex items-start gap-3">
-          <GitBranch size={18} className="text-blue-600 mt-0.5 shrink-0" />
+          <GitBranch size={18} className="text-brand-600 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-slate-900">演示级 BOM 成本拆解</p>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
@@ -97,7 +97,7 @@ export function ProductBom() {
                 onClick={() => setSelectedModelId(m.id)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
                   selectedModelId === m.id
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    ? 'border-blue-500 bg-brand-50 text-brand-700'
                     : 'border-slate-100 text-slate-600 hover:border-slate-200'
                 }`}
               >
@@ -111,7 +111,7 @@ export function ProductBom() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'BOM总项数', value: boms.length, color: 'text-blue-600' },
+            { label: 'BOM总项数', value: boms.length, color: 'text-brand-600' },
             { label: '标准件', value: requiredCount, color: 'text-emerald-600' },
             { label: '可选配件', value: optionalCount, color: 'text-amber-600' },
             { label: '叶子物料成本', value: `¥${totalCost.toLocaleString()}`, color: 'text-purple-600' },
@@ -127,7 +127,7 @@ export function ProductBom() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <GitBranch size={16} className="text-blue-500" />
+            <GitBranch size={16} className="text-brand-500" />
             <div>
               <h3 className="font-semibold text-slate-900">
                 {model?.modelName ?? '未知产品'} — BOM物料清单

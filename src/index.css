@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+/* 爱马仕橙主题色 */
+@theme {
+  --color-brand-50: #fff4ee;
+  --color-brand-100: #ffe4d0;
+  --color-brand-200: #ffc59e;
+  --color-brand-300: #ff9d63;
+  --color-brand-400: #ff7232;
+  --color-brand-500: #e8602c;
+  --color-brand-600: #d04e1e;
+  --color-brand-700: #a83c16;
+  --color-brand-800: #7e2c10;
+  --color-brand-900: #5a1e0a;
+}

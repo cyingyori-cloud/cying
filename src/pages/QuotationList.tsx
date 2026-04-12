@@ -65,7 +65,7 @@ function printQuotation(quotation: Quotation) {
           .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; }
           .label { color: #64748b; font-size: 12px; margin-bottom: 6px; }
           .value { font-size: 15px; font-weight: 600; }
-          .summary { border: 1px solid #dbeafe; background: #eff6ff; border-radius: 12px; padding: 14px; margin-top: 16px; }
+          .summary { border: 1px solid #fff4ee; background: #fff4ee; border-radius: 12px; padding: 14px; margin-top: 16px; }
           .remark { border: 1px solid #fde68a; background: #fffbeb; border-radius: 12px; padding: 14px; margin-top: 16px; }
           @media print { body { padding: 0; } button { display: none; } }
         </style>
@@ -136,34 +136,34 @@ export function QuotationList() {
 
   const summaryCards = currentRole === 'executive'
     ? [
-      { label: '报价总额', value: formatCurrency(totalRevenue), color: 'text-blue-600', bg: 'bg-blue-50', icon: <FileText size={16} className="text-blue-600" /> },
+      { label: '报价总额', value: formatCurrency(totalRevenue), color: 'text-brand-600', bg: 'bg-brand-50', icon: <FileText size={16} className="text-brand-600" /> },
       { label: '待审批金额', value: formatCurrency(filteredQuotations.filter((quotation) => quotation.status === 'SUBMITTED').reduce((sum, quotation) => sum + quotation.totalPrice, 0)), color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <Clock size={16} className="text-emerald-600" /> },
       { label: '平均毛利率', value: `${(avgGrossProfit * 100).toFixed(1)}%`, color: 'text-purple-600', bg: 'bg-purple-50', icon: <ShieldAlert size={16} className="text-purple-600" /> },
       { label: '低毛利报价', value: lowMarginQuotes.length, color: 'text-amber-600', bg: 'bg-amber-50', icon: <AlertCircle size={16} className="text-amber-600" /> },
     ]
     : currentRole === 'sales'
       ? [
-        { label: '待跟进报价', value: draftCount + pendingCount, color: 'text-blue-600', bg: 'bg-blue-50', icon: <BriefcaseBusiness size={16} className="text-blue-600" /> },
+        { label: '待跟进报价', value: draftCount + pendingCount, color: 'text-brand-600', bg: 'bg-brand-50', icon: <BriefcaseBusiness size={16} className="text-brand-600" /> },
         { label: '同步商机数', value: syncedCount, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <Link2 size={16} className="text-emerald-600" /> },
         { label: '已审批可回传', value: approvedCount, color: 'text-purple-600', bg: 'bg-purple-50', icon: <CheckCircle size={16} className="text-purple-600" /> },
         { label: '已驳回待修正', value: rejectedCount, color: 'text-amber-600', bg: 'bg-amber-50', icon: <XCircle size={16} className="text-amber-600" /> },
       ]
       : currentRole === 'presales'
         ? [
-          { label: '方案支撑报价', value: filteredQuotations.length, color: 'text-blue-600', bg: 'bg-blue-50', icon: <Cpu size={16} className="text-blue-600" /> },
+          { label: '方案支撑报价', value: filteredQuotations.length, color: 'text-brand-600', bg: 'bg-brand-50', icon: <Cpu size={16} className="text-brand-600" /> },
           { label: '平均成本', value: formatCurrency(totalCost), color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <FileText size={16} className="text-emerald-600" /> },
           { label: '待验证审批', value: pendingCount, color: 'text-purple-600', bg: 'bg-purple-50', icon: <Clock size={16} className="text-purple-600" /> },
           { label: '复杂方案样本', value: filteredQuotations.filter((quotation) => (quotation.solutionSummary?.split('/').length ?? 0) >= 3).length, color: 'text-amber-600', bg: 'bg-amber-50', icon: <ShieldAlert size={16} className="text-amber-600" /> },
         ]
         : currentRole === 'product'
           ? [
-            { label: '有效报价样本', value: filteredQuotations.length, color: 'text-blue-600', bg: 'bg-blue-50', icon: <Boxes size={16} className="text-blue-600" /> },
+            { label: '有效报价样本', value: filteredQuotations.length, color: 'text-brand-600', bg: 'bg-brand-50', icon: <Boxes size={16} className="text-brand-600" /> },
             { label: '同步商机数', value: syncedCount, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <Link2 size={16} className="text-emerald-600" /> },
             { label: '已审批样本', value: approvedCount, color: 'text-purple-600', bg: 'bg-purple-50', icon: <CheckCircle size={16} className="text-purple-600" /> },
             { label: '驳回反馈样本', value: rejectedCount, color: 'text-amber-600', bg: 'bg-amber-50', icon: <XCircle size={16} className="text-amber-600" /> },
           ]
           : [
-            { label: '待审批报价', value: pendingCount, color: 'text-blue-600', bg: 'bg-blue-50', icon: <Clock size={16} className="text-blue-600" /> },
+            { label: '待审批报价', value: pendingCount, color: 'text-brand-600', bg: 'bg-brand-50', icon: <Clock size={16} className="text-brand-600" /> },
             { label: '待审批金额', value: formatCurrency(filteredQuotations.filter((quotation) => quotation.status === 'SUBMITTED').reduce((sum, quotation) => sum + quotation.totalPrice, 0)), color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <TrendingBadge /> },
             { label: '低毛利报价', value: lowMarginQuotes.length, color: 'text-purple-600', bg: 'bg-purple-50', icon: <ShieldAlert size={16} className="text-purple-600" /> },
             { label: '已驳回报价', value: rejectedCount, color: 'text-amber-600', bg: 'bg-amber-50', icon: <XCircle size={16} className="text-amber-600" /> },
@@ -243,9 +243,9 @@ export function QuotationList() {
 
   return (
     <div className="p-6 space-y-4">
-      <Card className="border border-blue-100 bg-blue-50/60 p-4">
+      <Card className="border border-brand-100 bg-brand-50/60 p-4">
         <div className="flex items-start gap-3">
-          <Link2 size={18} className="text-blue-600 mt-0.5 shrink-0" />
+          <Link2 size={18} className="text-brand-600 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-slate-900">{roleInfo.label}下的报价管理</p>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">{introText}</p>
@@ -277,7 +277,7 @@ export function QuotationList() {
                   placeholder="搜索报价单号、商机号、客户名称、项目名称..."
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                 />
               </div>
               {canCreateQuote && (
@@ -296,7 +296,7 @@ export function QuotationList() {
                   onClick={() => setStatusFilter(status)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
                     statusFilter === status
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-brand-600 text-white'
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
@@ -390,7 +390,7 @@ export function QuotationList() {
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => setViewQuote(quotation)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 transition-colors"
                           title="查看详情"
                         >
                           <Eye size={14} />
@@ -452,9 +452,9 @@ export function QuotationList() {
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-blue-50 rounded-2xl p-4 text-center">
-                  <p className="text-xs text-blue-400 mb-1">报价金额</p>
-                  <p className="text-2xl font-bold text-blue-700">¥{viewQuote.totalPrice.toLocaleString()}</p>
+                <div className="bg-brand-50 rounded-2xl p-4 text-center">
+                  <p className="text-xs text-brand-400 mb-1">报价金额</p>
+                  <p className="text-2xl font-bold text-brand-700">¥{viewQuote.totalPrice.toLocaleString()}</p>
                 </div>
                 <div className="bg-slate-50 rounded-2xl p-4 text-center">
                   <p className="text-xs text-slate-400 mb-1">物料成本</p>
@@ -500,7 +500,7 @@ export function QuotationList() {
                         step.status === 'DONE'
                           ? 'bg-emerald-500 text-white'
                           : step.status === 'CURRENT'
-                            ? 'bg-blue-600 text-white'
+                            ? 'bg-brand-600 text-white'
                             : step.status === 'REJECTED'
                               ? 'bg-red-500 text-white'
                               : 'bg-slate-100 text-slate-400'
@@ -536,7 +536,7 @@ export function QuotationList() {
                   detailInsight.tone === 'danger' ? 'bg-red-50 text-red-800'
                     : detailInsight.tone === 'success' ? 'bg-emerald-50 text-emerald-800'
                       : detailInsight.tone === 'purple' ? 'bg-purple-50 text-purple-800'
-                        : 'bg-blue-50 text-blue-900'
+                        : 'bg-brand-50 text-blue-900'
                 }`}>
                   <p className="text-xs font-semibold">{detailInsight.title}</p>
                   <p className="text-sm mt-1 leading-relaxed">{detailInsight.body}</p>
@@ -546,8 +546,8 @@ export function QuotationList() {
               <QuoteInsightPanel insight={buildQuoteInsight(viewQuote, currentRole)} />
 
               {viewQuote.solutionSummary && (
-                <div className="bg-blue-50 rounded-xl px-4 py-3">
-                  <p className="text-xs text-blue-400 mb-0.5">方案摘要</p>
+                <div className="bg-brand-50 rounded-xl px-4 py-3">
+                  <p className="text-xs text-brand-400 mb-0.5">方案摘要</p>
                   <p className="text-sm text-blue-900">{viewQuote.solutionSummary}</p>
                 </div>
               )}

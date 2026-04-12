@@ -11,9 +11,9 @@ export function QuoteInsightPanel({ insight }: QuoteInsightPanelProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+      <div className="rounded-2xl border border-brand-100 bg-brand-50 p-4">
         <div className="flex items-center gap-2">
-          <Sparkles size={16} className="text-blue-600" />
+          <Sparkles size={16} className="text-brand-600" />
           <p className="text-sm font-semibold text-slate-900">AI 洞察摘要</p>
           <Badge variant={riskVariant}>{insight.riskLabel}</Badge>
         </div>
@@ -36,7 +36,7 @@ export function QuoteInsightPanel({ insight }: QuoteInsightPanelProps) {
 
         <div className="rounded-2xl bg-slate-50 p-4">
           <div className="flex items-center gap-2">
-            <Lightbulb size={14} className="text-blue-600" />
+            <Lightbulb size={14} className="text-brand-600" />
             <p className="text-sm font-semibold text-slate-900">AI 建议</p>
           </div>
           <div className="mt-3 space-y-2">

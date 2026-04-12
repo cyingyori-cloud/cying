@@ -816,7 +816,7 @@ export const revenueData = [
 ];
 
 export const categoryData = [
-  { name: '工商业一体柜', value: 42, color: '#2563eb' },
+  { name: '工商业一体柜', value: 42, color: '#E8602C' },
   { name: '数据中心备电', value: 31, color: '#10b981' },
   { name: '大型工商业/站级', value: 17, color: '#f59e0b' },
   { name: '家庭储能', value: 10, color: '#8b5cf6' },

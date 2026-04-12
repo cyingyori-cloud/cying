@@ -42,7 +42,7 @@ export function TopBar({ activeTab }: TopBarProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-semibold text-slate-900">{info.title}</h1>
-            <span className="hidden lg:inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700">
+            <span className="hidden lg:inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-medium text-brand-700">
               当前视角：{roleInfo.label}
             </span>
           </div>
@@ -73,14 +73,14 @@ export function TopBar({ activeTab }: TopBarProps) {
           <input
             type="text"
             placeholder={searchPlaceholder}
-            className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm text-slate-600 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 w-64 transition-all"
+            className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm text-slate-600 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 w-64 transition-all"
           />
         </div>
 
         <div className="flex items-center gap-2">
           <button className="relative p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
             <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-500 rounded-full" />
           </button>
           <button className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
             <HelpCircle size={18} />
@@ -99,7 +99,7 @@ export function TopBar({ activeTab }: TopBarProps) {
               }}
               className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-colors ${
                 currentRole === role.id
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-brand-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >

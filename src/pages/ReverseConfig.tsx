@@ -126,12 +126,12 @@ const schemeConfig = {
   },
   BALANCED: {
     label: '均衡推荐',
-    icon: <Shield size={18} className="text-blue-600" />,
-    bg: 'from-blue-500 to-blue-700',
+    icon: <Shield size={18} className="text-brand-600" />,
+    bg: 'from-brand-500 to-brand-700',
     badge: 'info' as const,
-    accent: 'text-blue-600',
-    border: 'border-blue-200',
-    highlight: 'bg-blue-50',
+    accent: 'text-brand-600',
+    border: 'border-brand-200',
+    highlight: 'bg-brand-50',
   },
   COST_EFFECTIVE: {
     label: '经济优选',
@@ -176,7 +176,7 @@ function SchemeCard({ scheme, onSelect }: { scheme: ConfigScheme; onSelect: () =
           </div>
           <p className="text-xl font-bold text-slate-900">{scheme.performanceScore.toFixed(1)}</p>
           <div className="mt-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full" style={{ width: `${scheme.performanceScore}%` }} />
+            <div className="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full" style={{ width: `${scheme.performanceScore}%` }} />
           </div>
         </div>
         <div className="p-4 text-center">
@@ -286,10 +286,10 @@ export function ReverseConfig() {
 
   return (
     <div className="p-6 space-y-6">
-      <Card className="border border-blue-100 bg-blue-50/60">
+      <Card className="border border-brand-100 bg-brand-50/60">
         <CardBody className="p-5">
           <div className="flex items-start gap-3">
-            <Link2 size={18} className="text-blue-600 mt-0.5 shrink-0" />
+            <Link2 size={18} className="text-brand-600 mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-semibold text-slate-900">{roleInfo.label}下的 AI 反向选配</p>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
@@ -306,7 +306,7 @@ export function ReverseConfig() {
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Zap size={16} className="text-blue-500" />
+                <Zap size={16} className="text-brand-500" />
                 <h3 className="font-semibold text-slate-900 text-sm">反向选配参数</h3>
               </div>
             </CardHeader>
@@ -316,7 +316,7 @@ export function ReverseConfig() {
                 <select
                   value={productId}
                   onChange={(event) => setProductId(Number(event.target.value))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                 >
                   {mockModels.filter((model) => model.status === 'ACTIVE').map((model) => (
                     <option key={model.id} value={model.id}>{model.modelCode} - {model.modelName}</option>
@@ -333,7 +333,7 @@ export function ReverseConfig() {
                       type="number"
                       value={minBudget}
                       onChange={(event) => setMinBudget(Number(event.target.value))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                     />
                   </div>
                   <div>
@@ -342,7 +342,7 @@ export function ReverseConfig() {
                       type="number"
                       value={maxBudget}
                       onChange={(event) => setMaxBudget(Number(event.target.value))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                     />
                   </div>
                 </div>
@@ -376,7 +376,7 @@ export function ReverseConfig() {
                       onClick={() => setResultCount(count)}
                       className={`flex-1 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
                         resultCount === count
-                          ? 'bg-blue-600 text-white border-blue-600'
+                          ? 'bg-brand-600 text-white border-brand-600'
                           : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                       }`}
                     >
@@ -396,7 +396,7 @@ export function ReverseConfig() {
 
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Target size={14} className="text-blue-500" />
+              <Target size={14} className="text-brand-500" />
               <span className="text-xs font-semibold text-slate-700">算法说明</span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
@@ -410,7 +410,7 @@ export function ReverseConfig() {
               : currentRole === 'presales' ? 'border border-purple-100 bg-purple-50/70'
                 : currentRole === 'sales' ? 'border border-emerald-100 bg-emerald-50/70'
                   : currentRole === 'product' ? 'border border-amber-100 bg-amber-50/70'
-                    : 'border border-blue-100 bg-blue-50/70'
+                    : 'border border-brand-100 bg-brand-50/70'
           }`}>
             <p className="text-sm font-semibold text-slate-900">{roleInfo.focus}</p>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">{roleGuide}</p>
@@ -432,7 +432,7 @@ export function ReverseConfig() {
 
           {!loading && schemes.length === 0 && (
             <div className="h-80 flex flex-col items-center justify-center text-slate-300">
-              <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+              <div className="w-20 h-20 rounded-full bg-brand-50 flex items-center justify-center mb-4">
                 <Zap size={36} className="text-blue-300" />
               </div>
               <p className="text-slate-400 font-medium">设置参数后点击“生成推荐方案”</p>
@@ -442,7 +442,7 @@ export function ReverseConfig() {
 
           {loading && (
             <div className="h-80 flex flex-col items-center justify-center">
-              <div className="w-16 h-16 rounded-full border-4 border-blue-100 border-t-blue-600 animate-spin mb-4" />
+              <div className="w-16 h-16 rounded-full border-4 border-brand-100 border-t-blue-600 animate-spin mb-4" />
               <p className="text-slate-500 font-medium">正在运行约束求解器...</p>
               <p className="text-sm text-slate-400 mt-1">遍历可行配置空间，评分排序中</p>
             </div>
@@ -452,7 +452,7 @@ export function ReverseConfig() {
             <div className="space-y-4">
               <div className="flex flex-col gap-2 rounded-2xl bg-slate-50 p-4 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <Sparkles size={14} className="text-blue-500" />
+                  <Sparkles size={14} className="text-brand-500" />
                   <span>在预算 ¥{minBudget.toLocaleString()} ~ ¥{maxBudget.toLocaleString()} 范围内，找到 <strong>{schemes.length}</strong> 个推荐方案</span>
                 </div>
                 <p className="text-xs text-slate-500">{roleGuide}</p>

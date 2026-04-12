@@ -119,7 +119,7 @@ function NavItemComponent({ item, depth = 0 }: { item: NavItem; depth?: number }
           'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
           depth > 0 && 'pl-8 text-xs',
           isActive
-            ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
+            ? 'bg-brand-600 text-white shadow-sm shadow-brand-200'
             : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
         )}
       >
@@ -128,7 +128,7 @@ function NavItemComponent({ item, depth = 0 }: { item: NavItem; depth?: number }
         {item.badge && (
           <span className={cn(
             'text-[10px] px-1.5 py-0.5 rounded-full font-medium',
-            isActive ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600',
+            isActive ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-600',
           )}>
             {item.badge}
           </span>
@@ -156,17 +156,17 @@ export function Sidebar() {
   const { currentRole } = useAppStore();
   const roleInfo = roleViewMap[currentRole];
   const visibleNavItems = filterNavItems(navItems, roleInfo.allowedTabs);
-  const roleIcon = currentRole === 'sales' ? <BriefcaseBusiness size={16} className="text-blue-500" />
-    : currentRole === 'approver' ? <ShieldAlert size={16} className="text-blue-500" />
-      : currentRole === 'product' ? <Boxes size={16} className="text-blue-500" />
-        : currentRole === 'presales' ? <Zap size={16} className="text-blue-500" />
-          : <LayoutDashboard size={16} className="text-blue-500" />;
+  const roleIcon = currentRole === 'sales' ? <BriefcaseBusiness size={16} className="text-brand-500" />
+    : currentRole === 'approver' ? <ShieldAlert size={16} className="text-brand-500" />
+      : currentRole === 'product' ? <Boxes size={16} className="text-brand-500" />
+        : currentRole === 'presales' ? <Zap size={16} className="text-brand-500" />
+          : <LayoutDashboard size={16} className="text-brand-500" />;
 
   return (
     <aside className="w-64 shrink-0 bg-white border-r border-slate-100 flex flex-col h-screen sticky top-0">
       <div className="px-6 py-5 border-b border-slate-100">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-sm shadow-blue-200">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-sm shadow-brand-200">
             <Zap size={18} className="text-white" />
           </div>
           <div>
@@ -174,10 +174,10 @@ export function Sidebar() {
             <p className="text-[10px] text-slate-400">储能业务 CPQ</p>
           </div>
         </div>
-        <div className="mt-4 rounded-2xl bg-blue-50 px-3 py-2.5">
+        <div className="mt-4 rounded-2xl bg-brand-50 px-3 py-2.5">
           <div className="flex items-center gap-2">
             {roleIcon}
-            <p className="text-xs font-semibold text-blue-700">{roleInfo.label}</p>
+            <p className="text-xs font-semibold text-brand-700">{roleInfo.label}</p>
           </div>
           <p className="text-[11px] text-slate-500 mt-1">{roleInfo.focus}</p>
         </div>
@@ -191,7 +191,7 @@ export function Sidebar() {
 
       <div className="px-4 pb-4 pt-2 border-t border-slate-100">
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 cursor-pointer">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
             <span className="text-white text-xs font-bold">{roleInfo.shortLabel.slice(0, 1)}</span>
           </div>
           <div className="flex-1 min-w-0">

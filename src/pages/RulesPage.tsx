@@ -37,7 +37,7 @@ function RuleCard({ rule, onView }: RuleCardProps) {
   return (
     <Card hover className="overflow-hidden">
       <div className={`h-1 w-full ${
-        rule.ruleType === 'DEPENDENCY' ? 'bg-blue-400'
+        rule.ruleType === 'DEPENDENCY' ? 'bg-brand-400'
           : rule.ruleType === 'EXCLUSION' ? 'bg-red-400'
             : rule.ruleType === 'FORCE' ? 'bg-amber-400'
               : 'bg-purple-400'
@@ -73,7 +73,7 @@ function RuleCard({ rule, onView }: RuleCardProps) {
             {conditions.map((c, idx) => (
               <span key={c.id}>
                 {idx > 0 && <span className="text-slate-400"> AND </span>}
-                <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md">
+                <span className="bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded-md">
                   {getFeatureName(c.featureId)} = {getOptionName(c.featureOptionId)}
                 </span>
               </span>
@@ -82,7 +82,7 @@ function RuleCard({ rule, onView }: RuleCardProps) {
           <div>
             <span className={`font-medium ${
               rule.ruleType === 'EXCLUSION' ? 'text-red-500'
-                : rule.ruleType === 'DEPENDENCY' ? 'text-blue-600'
+                : rule.ruleType === 'DEPENDENCY' ? 'text-brand-600'
                   : rule.ruleType === 'FORCE' ? 'text-amber-600'
                     : 'text-purple-600'
             }`}>
@@ -96,7 +96,7 @@ function RuleCard({ rule, onView }: RuleCardProps) {
                 {idx > 0 && <span className="text-slate-400"> AND </span>}
                 <span className={`px-1.5 py-0.5 rounded-md ${
                   rule.ruleType === 'EXCLUSION' ? 'bg-red-100 text-red-700'
-                    : rule.ruleType === 'DEPENDENCY' ? 'bg-blue-100 text-blue-700'
+                    : rule.ruleType === 'DEPENDENCY' ? 'bg-brand-100 text-brand-700'
                       : rule.ruleType === 'FORCE' ? 'bg-amber-100 text-amber-700'
                         : 'bg-purple-100 text-purple-700'
                 }`}>
@@ -135,7 +135,7 @@ export function RulesPage() {
               onClick={() => setFilter(type)}
               className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
                 filter === type
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-brand-600 text-white'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
@@ -155,7 +155,7 @@ export function RulesPage() {
             <Card key={type} className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 <span className={`${
-                  type === 'DEPENDENCY' ? 'text-blue-500'
+                  type === 'DEPENDENCY' ? 'text-brand-500'
                     : type === 'EXCLUSION' ? 'text-red-500'
                       : type === 'FORCE' ? 'text-amber-500'
                         : 'text-purple-500'
@@ -212,11 +212,11 @@ export function RulesPage() {
               <h4 className="text-sm font-semibold text-slate-700 mb-2">规则条件项 (IF)</h4>
               <div className="space-y-2">
                 {viewRule.items?.filter((i) => i.itemRole === 'CONDITION').map((item) => (
-                  <div key={item.id} className="flex items-center gap-2 bg-blue-50 rounded-xl px-4 py-2.5 text-sm">
-                    <span className="text-blue-500 font-mono text-xs">COND</span>
+                  <div key={item.id} className="flex items-center gap-2 bg-brand-50 rounded-xl px-4 py-2.5 text-sm">
+                    <span className="text-brand-500 font-mono text-xs">COND</span>
                     <span className="font-medium text-slate-700">{getFeatureName(item.featureId)}</span>
                     <span className="text-slate-400">{item.operator}</span>
-                    <span className="font-medium text-blue-700">{getOptionName(item.featureOptionId)}</span>
+                    <span className="font-medium text-brand-700">{getOptionName(item.featureOptionId)}</span>
                   </div>
                 ))}
               </div>

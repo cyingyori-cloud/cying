@@ -251,9 +251,9 @@ export function ProductModels() {
 
   return (
     <div className="p-6 space-y-4">
-      <Card className="border border-blue-100 bg-blue-50/60 p-4">
+      <Card className="border border-brand-100 bg-brand-50/60 p-4">
         <div className="flex items-start gap-3">
-          <BatteryCharging size={18} className="text-blue-600 mt-0.5 shrink-0" />
+          <BatteryCharging size={18} className="text-brand-600 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-slate-900">{roleInfo.label}下的产品主数据</p>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">{demoDataNotice}</p>
@@ -308,7 +308,7 @@ export function ProductModels() {
                   placeholder="搜索型号、场景、产品线..."
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                 />
               </div>
               <Button
@@ -348,8 +348,8 @@ export function ProductModels() {
                 >
                   <td className="px-6 py-4 w-[140px]">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                        {row.source === 'live' ? <Link2 size={14} className="text-emerald-500" /> : <Package size={14} className="text-blue-500" />}
+                      <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center">
+                        {row.source === 'live' ? <Link2 size={14} className="text-emerald-500" /> : <Package size={14} className="text-brand-500" />}
                       </div>
                       <span className="text-sm font-mono font-medium text-slate-700">{row.modelCode || '—'}</span>
                     </div>
@@ -383,7 +383,7 @@ export function ProductModels() {
                           setViewRow(row);
                           setDetailOpen(true);
                         }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 transition-colors"
                         title="查看详情"
                       >
                         <Eye size={15} />
@@ -443,7 +443,7 @@ export function ProductModels() {
                   value={form.modelCode}
                   onChange={(event) => setForm({ ...form, modelCode: event.target.value })}
                   placeholder="如: PQ-ESS-001"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                 />
               </div>
               {!isLiveMode && (
@@ -452,7 +452,7 @@ export function ProductModels() {
                   <select
                     value={form.catalogId}
                     onChange={(event) => setForm({ ...form, catalogId: Number(event.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 bg-white"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 bg-white"
                   >
                     {mockCatalogs.filter((catalog) => catalog.level === 2).map((catalog) => (
                       <option key={catalog.id} value={catalog.id}>{catalog.catalogName}</option>
@@ -466,7 +466,7 @@ export function ProductModels() {
                   <select
                     value={form.status}
                     onChange={(event) => setForm({ ...form, status: event.target.value as 'ACTIVE' | 'INACTIVE' })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 bg-white"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 bg-white"
                   >
                     <option value="ACTIVE">上架</option>
                     <option value="INACTIVE">下架</option>
@@ -481,7 +481,7 @@ export function ProductModels() {
                 value={form.modelName}
                 onChange={(event) => setForm({ ...form, modelName: event.target.value })}
                 placeholder="输入完整产品名称"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -492,7 +492,7 @@ export function ProductModels() {
                     <select
                       value={form.liveCategoryValue}
                       onChange={(event) => setForm({ ...form, liveCategoryValue: event.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 bg-white"
                     >
                       {(fxiaokeSnapshot?.categoryChoices ?? []).map((choice) => (
                         <option key={choice.value} value={choice.value}>
@@ -510,7 +510,7 @@ export function ProductModels() {
                     value={form.classification}
                     onChange={(event) => setForm({ ...form, classification: event.target.value })}
                     placeholder="如: 工商业储能 / 150kW"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                   />
                 )}
               </div>
@@ -520,7 +520,7 @@ export function ProductModels() {
                   type="number"
                   value={form.basePrice}
                   onChange={(event) => setForm({ ...form, basePrice: Number(event.target.value) })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                 />
               </div>
             </div>
@@ -531,7 +531,7 @@ export function ProductModels() {
                   type="number"
                   value={form.baseCost}
                   onChange={(event) => setForm({ ...form, baseCost: Number(event.target.value) })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                 />
               </div>
             )}
@@ -542,7 +542,7 @@ export function ProductModels() {
                 onChange={(event) => setForm({ ...form, description: event.target.value })}
                 rows={3}
                 placeholder="输入产品描述..."
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 resize-none"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 resize-none"
               />
             </div>
             <div className="flex gap-3 pt-2">
@@ -559,8 +559,8 @@ export function ProductModels() {
         {viewRow && (
           <div className="p-6 space-y-4">
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
-                <Package size={28} className="text-blue-500" />
+              <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center shrink-0">
+                <Package size={28} className="text-brand-500" />
               </div>
               <div>
                 <h3 className="font-semibold text-slate-900 text-lg">{viewRow.modelName}</h3>
@@ -580,7 +580,7 @@ export function ProductModels() {
               </div>
               <div className="bg-slate-50 rounded-xl p-4">
                 <p className="text-xs text-slate-400 mb-1">定价 / 估算成本</p>
-                <p className="font-bold text-xl text-blue-600">{formatCurrency(viewRow.basePrice)}</p>
+                <p className="font-bold text-xl text-brand-600">{formatCurrency(viewRow.basePrice)}</p>
                 <p className="text-xs text-slate-500 mt-1">成本 {viewRow.baseCost != null ? formatCurrency(viewRow.baseCost) : '—'}</p>
               </div>
             </div>

@@ -51,7 +51,7 @@ function MarketTicker() {
         }
       `}</style>
       <div className="bg-slate-900 text-white rounded-xl overflow-hidden flex items-center shadow-lg border border-slate-800">
-        <div className="bg-blue-600 px-4 py-2.5 font-semibold text-sm flex-shrink-0 z-10 flex items-center gap-2">
+        <div className="bg-brand-600 px-4 py-2.5 font-semibold text-sm flex-shrink-0 z-10 flex items-center gap-2">
           <TrendingUp size={16} /> 成本敏感指标
         </div>
         <div className="overflow-hidden flex-1 relative">
@@ -97,7 +97,7 @@ function TrendChart({ title }: { title: string }) {
             <p className="text-xs text-slate-400 mt-0.5">2026 年演示口径</p>
           </div>
           <div className="flex items-center gap-4 text-xs text-slate-500">
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-blue-500" />报价额</div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-brand-500" />报价额</div>
             <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-emerald-400" />成本</div>
           </div>
         </div>
@@ -107,8 +107,8 @@ function TrendChart({ title }: { title: string }) {
           <AreaChart data={revenueData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="revenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.18} />
-                <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                <stop offset="5%" stopColor="#E8602C" stopOpacity={0.18} />
+                <stop offset="95%" stopColor="#E8602C" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="cost" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.18} />
@@ -119,7 +119,7 @@ function TrendChart({ title }: { title: string }) {
             <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(value) => `${(value / 10000).toFixed(0)}万`} />
             <Tooltip formatter={(value) => [`¥${Number(value).toLocaleString()}`, '']} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
-            <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} fill="url(#revenue)" name="报价额" />
+            <Area type="monotone" dataKey="revenue" stroke="#E8602C" strokeWidth={2} fill="url(#revenue)" name="报价额" />
             <Area type="monotone" dataKey="cost" stroke="#10b981" strokeWidth={2} fill="url(#cost)" name="成本" />
           </AreaChart>
         </ResponsiveContainer>
@@ -150,8 +150,8 @@ function RecentQuoteList({
           const status = statusConfig[quotation.status];
           return (
             <div key={quotation.id} className="px-6 py-3 flex items-center gap-4 hover:bg-slate-50 transition-colors">
-              <div className={`p-2 rounded-lg ${quotation.status === 'APPROVED' ? 'bg-emerald-50' : quotation.status === 'REJECTED' ? 'bg-red-50' : 'bg-blue-50'}`}>
-                <FileText size={16} className={quotation.status === 'APPROVED' ? 'text-emerald-500' : quotation.status === 'REJECTED' ? 'text-red-500' : 'text-blue-500'} />
+              <div className={`p-2 rounded-lg ${quotation.status === 'APPROVED' ? 'bg-emerald-50' : quotation.status === 'REJECTED' ? 'bg-red-50' : 'bg-brand-50'}`}>
+                <FileText size={16} className={quotation.status === 'APPROVED' ? 'text-emerald-500' : quotation.status === 'REJECTED' ? 'text-red-500' : 'text-brand-500'} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-slate-900 truncate">{quotation.customerName}</p>
@@ -199,7 +199,7 @@ function ExecutiveDashboard({
         onAction={() => setActiveTab('quotations-list')}
       />
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard title="本期报价总额" value={formatCurrency(totalRevenue)} subtitle="经营盘子" trend={18.9} trendLabel="较上月" icon={<TrendingUp size={20} className="text-blue-600" />} iconBg="bg-blue-50" />
+        <StatCard title="本期报价总额" value={formatCurrency(totalRevenue)} subtitle="经营盘子" trend={18.9} trendLabel="较上月" icon={<TrendingUp size={20} className="text-brand-600" />} iconBg="bg-brand-50" />
         <StatCard title="待审批金额" value={formatCurrency(pendingAmount)} subtitle={`${pendingQuotations.length} 单待处理`} trend={6.2} trendLabel="较昨日" icon={<Clock size={20} className="text-amber-600" />} iconBg="bg-amber-50" />
         <StatCard title="平均毛利率" value={formatPercent(avgGrossProfit)} subtitle={`${lowMarginQuotes.length} 单低于 16%`} trend={2.4} trendLabel="较上周" icon={<ShieldAlert size={20} className="text-emerald-600" />} iconBg="bg-emerald-50" />
         <StatCard title="产品线覆盖" value={activeProducts} subtitle={`其中 ${aidcProducts} 个 AIDC 型号`} trend={14.3} trendLabel="较上月" icon={<Boxes size={20} className="text-purple-600" />} iconBg="bg-purple-50" />
@@ -219,9 +219,9 @@ function ExecutiveDashboard({
               <p className="text-sm font-semibold text-amber-700">待审批金额</p>
               <p className="text-xs text-amber-700 mt-1">{formatCurrency(pendingAmount)} 仍在等待处理，直接影响项目推进效率。</p>
             </div>
-            <div className="rounded-2xl bg-blue-50 p-4">
-              <p className="text-sm font-semibold text-blue-700">产品线覆盖</p>
-              <p className="text-xs text-blue-700 mt-1">当前已经覆盖工商业储能、AIDC 储能和家庭储能三条产品线。</p>
+            <div className="rounded-2xl bg-brand-50 p-4">
+              <p className="text-sm font-semibold text-brand-700">产品线覆盖</p>
+              <p className="text-xs text-brand-700 mt-1">当前已经覆盖工商业储能、AIDC 储能和家庭储能三条产品线。</p>
             </div>
           </CardBody>
         </Card>
@@ -229,7 +229,7 @@ function ExecutiveDashboard({
       <RecentQuoteList
         title="重点项目推进"
         rows={topRevenueQuotes}
-        footerAction={<button onClick={() => setActiveTab('quotations-list')} className="text-xs text-blue-600 font-medium">查看全部</button>}
+        footerAction={<button onClick={() => setActiveTab('quotations-list')} className="text-xs text-brand-600 font-medium">查看全部</button>}
       />
     </>
   );
@@ -261,14 +261,14 @@ function SalesDashboard({
         onAction={() => setActiveTab('quotations-cpq')}
       />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border border-blue-100">
+        <Card className="border border-brand-100">
           <CardBody className="p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-900">我的商机任务</p>
                 <p className="text-xs text-slate-400 mt-1">{followUpQuotes.length} 条待跟进</p>
               </div>
-              <BriefcaseBusiness size={18} className="text-blue-500" />
+              <BriefcaseBusiness size={18} className="text-brand-500" />
             </div>
             <Button className="mt-4 w-full" size="sm" icon={<Sparkles size={14} />} onClick={() => setActiveTab('configurator-reverse')}>去 AI 选配</Button>
           </CardBody>
@@ -361,7 +361,7 @@ function PresalesDashboard({
         onAction={() => setActiveTab('configurator-forward')}
       />
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard title="可配置型号" value={activeProducts} subtitle={`${bomCoveredModels} 个型号含 BOM`} trend={14.3} trendLabel="较上月" icon={<Package size={20} className="text-blue-600" />} iconBg="bg-blue-50" />
+        <StatCard title="可配置型号" value={activeProducts} subtitle={`${bomCoveredModels} 个型号含 BOM`} trend={14.3} trendLabel="较上月" icon={<Package size={20} className="text-brand-600" />} iconBg="bg-brand-50" />
         <StatCard title="特征配置项" value={mockFeatures.length} subtitle="关键交付参数" trend={6.8} trendLabel="较上周" icon={<Cpu size={20} className="text-emerald-600" />} iconBg="bg-emerald-50" />
         <StatCard title="有效规则数" value={activeRules} subtitle="依赖 / 互斥 / 推荐" trend={10.5} trendLabel="较上周" icon={<ShieldAlert size={20} className="text-purple-600" />} iconBg="bg-purple-50" />
         <StatCard title="复杂方案样本" value={complexQuotes.length} subtitle="适合沉淀复用" trend={7.7} trendLabel="较上月" icon={<GitBranch size={20} className="text-amber-600" />} iconBg="bg-amber-50" />
@@ -378,7 +378,7 @@ function PresalesDashboard({
               { label: '规则中心', desc: '查看依赖/互斥关系', action: () => setActiveTab('rules') },
               { label: 'BOM成本', desc: '核对物料拆解与估算', action: () => setActiveTab('products-bom') },
             ].map((item) => (
-              <button key={item.label} onClick={item.action} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-blue-300 hover:bg-blue-50 transition-colors">
+              <button key={item.label} onClick={item.action} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-blue-300 hover:bg-brand-50 transition-colors">
                 <p className="text-sm font-semibold text-slate-900">{item.label}</p>
                 <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
               </button>
@@ -390,9 +390,9 @@ function PresalesDashboard({
             <h3 className="font-semibold text-slate-900">技术校验重点</h3>
           </CardHeader>
           <CardBody className="space-y-3">
-            <div className="rounded-2xl bg-blue-50 p-4">
-              <p className="text-sm font-semibold text-blue-700">认证口径</p>
-              <p className="text-xs text-blue-700 mt-1">北美 UL9540A、欧盟 IEC/CE、日本 JET 与家储出口口径需要优先确认。</p>
+            <div className="rounded-2xl bg-brand-50 p-4">
+              <p className="text-sm font-semibold text-brand-700">认证口径</p>
+              <p className="text-xs text-brand-700 mt-1">北美 UL9540A、欧盟 IEC/CE、日本 JET 与家储出口口径需要优先确认。</p>
             </div>
             <div className="rounded-2xl bg-purple-50 p-4">
               <p className="text-sm font-semibold text-purple-700">规则命中</p>
@@ -433,7 +433,7 @@ function ProductDashboard({
         onAction={() => setActiveTab('products-models')}
       />
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard title="型号主数据" value={products.length} subtitle="当前已录入型号" trend={14.3} trendLabel="较上月" icon={<Package size={20} className="text-blue-600" />} iconBg="bg-blue-50" />
+        <StatCard title="型号主数据" value={products.length} subtitle="当前已录入型号" trend={14.3} trendLabel="较上月" icon={<Package size={20} className="text-brand-600" />} iconBg="bg-brand-50" />
         <StatCard title="特征配置项" value={mockFeatures.length} subtitle="覆盖关键参数" trend={6.8} trendLabel="较上周" icon={<Cpu size={20} className="text-emerald-600" />} iconBg="bg-emerald-50" />
         <StatCard title="规则资产" value={activeRules} subtitle="已启用业务规则" trend={10.5} trendLabel="较上周" icon={<GitBranch size={20} className="text-purple-600" />} iconBg="bg-purple-50" />
         <StatCard title="BOM覆盖型号" value={bomCoveredModels} subtitle="可做成本拆解" trend={5.4} trendLabel="较上月" icon={<Boxes size={20} className="text-amber-600" />} iconBg="bg-amber-50" />
@@ -445,7 +445,7 @@ function ProductDashboard({
           </CardHeader>
           <CardBody className="space-y-3">
             {[
-              { label: '工商业储能', count: products.filter((product) => product.catalogId === 4 || product.catalogId === 5).length, color: 'bg-blue-500' },
+              { label: '工商业储能', count: products.filter((product) => product.catalogId === 4 || product.catalogId === 5).length, color: 'bg-brand-500' },
               { label: '数据中心储能', count: products.filter((product) => product.catalogId === 6 || product.catalogId === 7).length, color: 'bg-emerald-500' },
               { label: '家庭储能', count: products.filter((product) => product.catalogId === 8).length, color: 'bg-amber-500' },
             ].map((item) => (
@@ -472,7 +472,7 @@ function ProductDashboard({
               { label: '特征配置', desc: '维护可配置特征与默认选项', action: () => setActiveTab('features') },
               { label: '规则中心', desc: '维护依赖、互斥和推荐规则', action: () => setActiveTab('rules') },
             ].map((item) => (
-              <button key={item.label} onClick={item.action} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-blue-300 hover:bg-blue-50 transition-colors">
+              <button key={item.label} onClick={item.action} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-blue-300 hover:bg-brand-50 transition-colors">
                 <p className="text-sm font-semibold text-slate-900">{item.label}</p>
                 <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
               </button>
@@ -507,7 +507,7 @@ function ApproverDashboard({
         onAction={() => setActiveTab('approval-workbench')}
       />
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard title="待审批报价" value={pendingQuotations.length} subtitle="当前审批负载" trend={6.2} trendLabel="较昨日" icon={<Clock size={20} className="text-blue-600" />} iconBg="bg-blue-50" />
+        <StatCard title="待审批报价" value={pendingQuotations.length} subtitle="当前审批负载" trend={6.2} trendLabel="较昨日" icon={<Clock size={20} className="text-brand-600" />} iconBg="bg-brand-50" />
         <StatCard title="待审批金额" value={formatCurrency(pendingAmount)} subtitle="金额敞口" trend={4.9} trendLabel="较昨日" icon={<TrendingUp size={20} className="text-emerald-600" />} iconBg="bg-emerald-50" />
         <StatCard title="低毛利报价" value={lowMarginQuotes.length} subtitle="低于 16%" trend={-2.0} trendLabel="较上周" icon={<ShieldAlert size={20} className="text-red-600" />} iconBg="bg-red-50" />
         <StatCard title="已驳回报价" value={rejectedCount} subtitle="待回流修正" trend={3.1} trendLabel="较上月" icon={<AlertCircle size={20} className="text-amber-600" />} iconBg="bg-amber-50" />
@@ -516,7 +516,7 @@ function ApproverDashboard({
         <RecentQuoteList
           title="待审批 / 风险报价"
           rows={[...pendingQuotations, ...lowMarginQuotes].slice(0, 5)}
-          footerAction={<button onClick={() => setActiveTab('approval-workbench')} className="text-xs text-blue-600 font-medium">打开工作台</button>}
+          footerAction={<button onClick={() => setActiveTab('approval-workbench')} className="text-xs text-brand-600 font-medium">打开工作台</button>}
         />
         <Card>
           <CardHeader>
@@ -531,9 +531,9 @@ function ApproverDashboard({
               <p className="text-sm font-semibold text-amber-700">标准审批</p>
               <p className="text-xs text-amber-700 mt-1">毛利率正常时，重点确认商机归属、方案摘要与交付条件。</p>
             </div>
-            <div className="rounded-2xl bg-blue-50 p-4">
-              <p className="text-sm font-semibold text-blue-700">回写 CRM</p>
-              <p className="text-xs text-blue-700 mt-1">审批通过后，报价状态回写到纷享销客，销售可以继续推进客户沟通。</p>
+            <div className="rounded-2xl bg-brand-50 p-4">
+              <p className="text-sm font-semibold text-brand-700">回写 CRM</p>
+              <p className="text-xs text-brand-700 mt-1">审批通过后，报价状态回写到纷享销客，销售可以继续推进客户沟通。</p>
             </div>
           </CardBody>
         </Card>

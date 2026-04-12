@@ -333,10 +333,10 @@ export function InquiryMatching() {
 
   return (
     <div className="p-6 space-y-4">
-      <Card className="border border-blue-100 bg-blue-50/60">
+      <Card className="border border-brand-100 bg-brand-50/60">
         <CardBody className="p-5">
           <div className="flex items-start gap-3">
-            <ClipboardList size={18} className="text-blue-600 mt-0.5 shrink-0" />
+            <ClipboardList size={18} className="text-brand-600 mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-semibold text-slate-900">{roleInfo.label}下的需求录入与候选匹配</p>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
@@ -468,7 +468,7 @@ export function InquiryMatching() {
                   return (
                     <tr
                       key={plan.skuCode}
-                      className={`cursor-pointer transition-colors ${active ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
+                      className={`cursor-pointer transition-colors ${active ? 'bg-brand-50' : 'hover:bg-slate-50'}`}
                       onClick={() => setSelectedSkuCode(plan.skuCode)}
                     >
                       <td className="px-4 py-3 text-right text-sm text-slate-700">{plan.moduleCount}</td>
@@ -514,7 +514,7 @@ export function InquiryMatching() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-slate-50 p-4">
               <div className="flex items-center gap-2">
-                <ClipboardList size={15} className="text-blue-600" />
+                <ClipboardList size={15} className="text-brand-600" />
                 <p className="text-xs font-semibold text-slate-700">步骤 1：方案组合枚举</p>
               </div>
               <p className="text-sm text-slate-900 mt-2">模组候选：{appliedForm.moduleCounts.join(' / ')}</p>
@@ -532,9 +532,9 @@ export function InquiryMatching() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
-            <p className="text-xs font-semibold text-blue-700">系统解析结论</p>
-            <ol className="mt-2 space-y-1 text-xs text-blue-700 list-decimal pl-4">
+          <div className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3">
+            <p className="text-xs font-semibold text-brand-700">系统解析结论</p>
+            <ol className="mt-2 space-y-1 text-xs text-brand-700 list-decimal pl-4">
               <li>先根据客户需求锁定推荐产品族。</li>
               <li>围绕模组数、消防、两线/三线枚举一组方案组合。</li>
               <li>按电压范围、电流阈值、海拔与特殊需求打标识，不直接删方案。</li>

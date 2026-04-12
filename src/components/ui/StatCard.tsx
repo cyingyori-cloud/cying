@@ -15,7 +15,7 @@ interface StatCardProps {
 }
 
 export function StatCard({
-  title, value, subtitle, trend, trendLabel, icon, iconBg = 'bg-blue-50', className,
+  title, value, subtitle, trend, trendLabel, icon, iconBg = 'bg-brand-50', className,
 }: StatCardProps) {
   const isPositive = trend !== undefined && trend >= 0;
 

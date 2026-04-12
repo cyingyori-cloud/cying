@@ -132,7 +132,7 @@ export function CpqQuotation() {
               </div>
               <div className="flex gap-3">
                 <span className="text-slate-400 w-20">报价金额</span>
-                <span className="font-bold text-blue-600">{formatCurrency(totalPrice)}</span>
+                <span className="font-bold text-brand-600">{formatCurrency(totalPrice)}</span>
               </div>
               <div className="flex gap-3">
                 <span className="text-slate-400 w-20">关联商机</span>
@@ -168,10 +168,10 @@ export function CpqQuotation() {
 
   return (
     <div className="p-6 space-y-6">
-      <Card className="border border-blue-100 bg-blue-50/60">
+      <Card className="border border-brand-100 bg-brand-50/60">
         <CardBody className="p-5">
           <div className="flex items-start gap-3">
-            <Link2 size={18} className="text-blue-600 mt-0.5 shrink-0" />
+            <Link2 size={18} className="text-brand-600 mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-semibold text-slate-900">{roleInfo.label}下的 CPQ 报价页</p>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
@@ -222,7 +222,7 @@ export function CpqQuotation() {
           <div key={item.n} className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
               step === item.n
-                ? 'bg-blue-600 text-white'
+                ? 'bg-brand-600 text-white'
                 : step > item.n
                   ? 'bg-emerald-500 text-white'
                   : 'bg-slate-100 text-slate-400'
@@ -230,7 +230,7 @@ export function CpqQuotation() {
               {step > item.n ? <CheckCircle size={16} /> : item.n}
             </div>
             <span className={`text-sm font-medium ${
-              step === item.n ? 'text-blue-600' : step > item.n ? 'text-emerald-600' : 'text-slate-400'
+              step === item.n ? 'text-brand-600' : step > item.n ? 'text-emerald-600' : 'text-slate-400'
             }`}>
               {item.label}
             </span>
@@ -255,14 +255,14 @@ export function CpqQuotation() {
                       onClick={() => handleModelSelect(item.id)}
                       className={`text-left p-4 rounded-xl border-2 transition-all ${
                         selectedModelId === item.id
-                          ? 'border-blue-500 bg-blue-50'
+                          ? 'border-blue-500 bg-brand-50'
                           : 'border-slate-100 hover:border-slate-200 bg-white'
                       }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <Package size={14} className="text-blue-400 shrink-0" />
+                            <Package size={14} className="text-brand-400 shrink-0" />
                             <span className="text-xs font-mono text-slate-400">{item.modelCode}</span>
                           </div>
                           <p className="font-medium text-slate-900 text-sm truncate">{item.modelName}</p>
@@ -270,11 +270,11 @@ export function CpqQuotation() {
                             {[item.ratedPowerKw ? `${item.ratedPowerKw}kW` : null, item.ratedEnergyKWh ? `${item.ratedEnergyKWh}kWh` : null].filter(Boolean).join(' / ') || item.classification}
                           </p>
                           <div className="flex items-center gap-2 mt-2">
-                            <span className="text-blue-600 font-bold text-sm">{formatCurrency(item.basePrice)}</span>
+                            <span className="text-brand-600 font-bold text-sm">{formatCurrency(item.basePrice)}</span>
                             {item.classification && <Badge variant="info" className="text-[10px]">{item.classification}</Badge>}
                           </div>
                         </div>
-                        {selectedModelId === item.id && <CheckCircle size={16} className="text-blue-500 shrink-0 ml-2" />}
+                        {selectedModelId === item.id && <CheckCircle size={16} className="text-brand-500 shrink-0 ml-2" />}
                       </div>
                     </button>
                   ))}
@@ -318,10 +318,10 @@ export function CpqQuotation() {
                               key={option.id}
                               onClick={() => handleSelectOption(feature.id, option.id)}
                               className={`relative p-3 rounded-xl border-2 text-left transition-all ${
-                                isSelected ? 'border-blue-500 bg-blue-50' : 'border-slate-100 hover:border-blue-200 bg-white'
+                                isSelected ? 'border-blue-500 bg-brand-50' : 'border-slate-100 hover:border-brand-200 bg-white'
                               }`}
                             >
-                              {isSelected && <CheckCircle size={13} className="absolute top-2 right-2 text-blue-500" />}
+                              {isSelected && <CheckCircle size={13} className="absolute top-2 right-2 text-brand-500" />}
                               {option.isDefault && !isSelected && (
                                 <Badge variant="default" className="absolute top-2 right-2 text-[9px] py-0">默认</Badge>
                               )}
@@ -333,7 +333,7 @@ export function CpqQuotation() {
                                 </span>
                                 <div className="flex items-center gap-1">
                                   <div className="w-8 h-1 bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-blue-400 rounded-full" style={{ width: `${option.performanceScore}%` }} />
+                                    <div className="h-full bg-brand-400 rounded-full" style={{ width: `${option.performanceScore}%` }} />
                                   </div>
                                   <span className="text-[10px] text-slate-400">{option.performanceScore}</span>
                                 </div>
@@ -375,7 +375,7 @@ export function CpqQuotation() {
                       value={form.linkedOpportunity}
                       onChange={(event) => setForm({ ...form, linkedOpportunity: event.target.value })}
                       placeholder="如: FXK-OPP-ESS-202604-001"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                     />
                   </div>
                   <div>
@@ -387,7 +387,7 @@ export function CpqQuotation() {
                       value={form.customerName}
                       onChange={(event) => setForm({ ...form, customerName: event.target.value })}
                       placeholder="如: 华东工业园运营方"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                     />
                   </div>
                 </div>
@@ -401,7 +401,7 @@ export function CpqQuotation() {
                       value={form.customerContact}
                       onChange={(event) => setForm({ ...form, customerContact: event.target.value })}
                       placeholder="姓名 + 手机号"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                     />
                   </div>
                   <div>
@@ -413,7 +413,7 @@ export function CpqQuotation() {
                       value={form.projectName}
                       onChange={(event) => setForm({ ...form, projectName: event.target.value })}
                       placeholder="如: 300kWh 园区峰谷套利一期"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                     />
                   </div>
                 </div>
@@ -425,7 +425,7 @@ export function CpqQuotation() {
                     <select
                       value={form.validDays}
                       onChange={(event) => setForm({ ...form, validDays: Number(event.target.value) })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 bg-white"
                     >
                       {[30, 60, 90, 180].map((days) => (
                         <option key={days} value={days}>{days}天</option>
@@ -440,7 +440,7 @@ export function CpqQuotation() {
                       type="text"
                       value={form.createdBy}
                       onChange={(event) => setForm({ ...form, createdBy: event.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
                     />
                   </div>
                 </div>
@@ -453,7 +453,7 @@ export function CpqQuotation() {
                     onChange={(event) => setForm({ ...form, remarks: event.target.value })}
                     rows={3}
                     placeholder="填写特殊要求或审批备注..."
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 resize-none"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 resize-none"
                   />
                 </div>
                 <div className="flex gap-3 pt-2">
@@ -473,7 +473,7 @@ export function CpqQuotation() {
               <h3 className="font-semibold text-slate-900 text-sm">实时报价汇总</h3>
             </CardHeader>
             <CardBody className="space-y-3">
-              <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white">
+              <div className="bg-gradient-to-br from-brand-600 to-brand-800 rounded-2xl p-5 text-white">
                 <p className="text-blue-200 text-xs mb-1">配置总报价</p>
                 <p className="text-4xl font-bold">{formatCurrency(totalPrice)}</p>
                 <p className="text-blue-200 text-xs mt-1">预计毛利率 {(grossMargin * 100).toFixed(1)}%</p>
@@ -481,7 +481,7 @@ export function CpqQuotation() {
               <div className="space-y-2">
                 {[
                   { label: '产品基础报价', value: basePrice, className: 'text-slate-700' },
-                  { label: '选配价格增量', value: optionsPriceSum, className: 'text-blue-600' },
+                  { label: '选配价格增量', value: optionsPriceSum, className: 'text-brand-600' },
                   { label: '产品基础成本', value: baseCost, className: 'text-slate-500' },
                   { label: '选配成本增量', value: optionsCostSum, className: 'text-slate-500' },
                   { label: '毛利润', value: totalPrice - totalCost, className: 'text-emerald-600' },

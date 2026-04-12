@@ -38,9 +38,9 @@ function CatalogNode({ node, depth = 0 }: { node: Catalog; depth?: number }) {
             <div className="w-4" />
           )}
         </div>
-        <div className={`p-2 rounded-lg ${depth === 0 ? 'bg-blue-50' : 'bg-slate-50'}`}>
+        <div className={`p-2 rounded-lg ${depth === 0 ? 'bg-brand-50' : 'bg-slate-50'}`}>
           {depth === 0
-            ? <FolderOpen size={15} className="text-blue-500" />
+            ? <FolderOpen size={15} className="text-brand-500" />
             : <Boxes size={14} className="text-slate-500" />}
         </div>
         <div className="flex-1 min-w-0">
@@ -59,7 +59,7 @@ function CatalogNode({ node, depth = 0 }: { node: Catalog; depth?: number }) {
           )}
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors">
+          <button className="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 transition-colors">
             <Edit2 size={13} />
           </button>
           <button className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 transition-colors">
@@ -91,7 +91,7 @@ export function ProductCatalog() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: '一级目录', value: l1, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: '一级目录', value: l1, color: 'text-brand-600', bg: 'bg-brand-50' },
           { label: '二级目录', value: l2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: '已启用', value: active, color: 'text-purple-600', bg: 'bg-purple-50' },
         ].map((s) => (
@@ -178,7 +178,7 @@ export function ProductCatalog() {
               value={form.catalogCode}
               onChange={(e) => setForm({ ...form, catalogCode: e.target.value })}
               placeholder="如: CAT-HV-NEW"
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
             />
           </div>
           <div>
@@ -188,7 +188,7 @@ export function ProductCatalog() {
               value={form.catalogName}
               onChange={(e) => setForm({ ...form, catalogName: e.target.value })}
               placeholder="输入目录名称"
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
             />
           </div>
           <div>
@@ -196,7 +196,7 @@ export function ProductCatalog() {
             <select
               value={form.parentId}
               onChange={(e) => setForm({ ...form, parentId: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 bg-white"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 bg-white"
             >
               <option value="">无（一级目录）</option>
               {mockCatalogs.filter((c) => c.level === 1).map((c) => (
@@ -211,7 +211,7 @@ export function ProductCatalog() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={2}
               placeholder="输入目录描述..."
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 resize-none"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 resize-none"
             />
           </div>
           <div className="flex gap-3 pt-2">

@@ -114,10 +114,10 @@ export function MappingWorkbench() {
 
   return (
     <div className="p-6 space-y-4">
-      <Card className="border border-blue-100 bg-blue-50/60">
+      <Card className="border border-brand-100 bg-brand-50/60">
         <CardBody className="p-5">
           <div className="flex items-start gap-3">
-            <Workflow size={18} className="text-blue-600 mt-0.5 shrink-0" />
+            <Workflow size={18} className="text-brand-600 mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-semibold text-slate-900">{roleInfo.label}下的映射与成本协同台</p>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
@@ -133,7 +133,7 @@ export function MappingWorkbench() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4">
-          <div className="inline-flex rounded-xl bg-blue-50 p-2 text-blue-600"><PackageSearch size={16} /></div>
+          <div className="inline-flex rounded-xl bg-brand-50 p-2 text-brand-600"><PackageSearch size={16} /></div>
           <p className="mt-3 text-2xl font-bold text-slate-900">{rows.length}</p>
           <p className="text-xs text-slate-500 mt-1">销售产品映射任务</p>
         </Card>
@@ -189,7 +189,7 @@ export function MappingWorkbench() {
                       <p className="text-xs text-slate-400">BOM 版本</p>
                       <p className="text-sm font-medium text-slate-800">{row.bomVersion}</p>
                       <p className="text-xs text-slate-400 mt-3">指导价建议</p>
-                      <p className="text-sm font-semibold text-blue-600">{formatCurrency(row.targetPrice)}</p>
+                      <p className="text-sm font-semibold text-brand-600">{formatCurrency(row.targetPrice)}</p>
                     </div>
                   </div>
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -231,9 +231,9 @@ export function MappingWorkbench() {
                 <p className="text-sm font-semibold text-amber-700">软协同</p>
                 <p className="text-xs text-amber-700 mt-1">AI 先给映射草稿，但最终仍需产品经理确认，并由采购/财务补齐成本。</p>
               </div>
-              <div className="rounded-2xl bg-blue-50 p-4">
-                <p className="text-sm font-semibold text-blue-700">输出结果</p>
-                <p className="text-xs text-blue-700 mt-1">当成本齐套后，再进入指导价、审批路径和 CRM 状态回写。</p>
+              <div className="rounded-2xl bg-brand-50 p-4">
+                <p className="text-sm font-semibold text-brand-700">输出结果</p>
+                <p className="text-xs text-brand-700 mt-1">当成本齐套后，再进入指导价、审批路径和 CRM 状态回写。</p>
               </div>
             </CardBody>
           </Card>

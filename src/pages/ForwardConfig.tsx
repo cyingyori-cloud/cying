@@ -215,10 +215,10 @@ export function ForwardConfig() {
   return (
     <div className="p-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
       <div className="xl:col-span-2 space-y-4">
-        <Card className="border border-blue-100 bg-blue-50/60">
+        <Card className="border border-brand-100 bg-brand-50/60">
           <CardBody className="p-5">
             <div className="flex items-start gap-3">
-              <Link2 size={18} className="text-blue-600 mt-0.5 shrink-0" />
+              <Link2 size={18} className="text-brand-600 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-semibold text-slate-900">{roleInfo.label}下的正向选配</p>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
@@ -275,7 +275,7 @@ export function ForwardConfig() {
                   }}
                   className={`text-left p-4 rounded-xl border-2 transition-all ${
                     product?.id === model.id
-                      ? 'border-blue-500 bg-blue-50'
+                      ? 'border-blue-500 bg-brand-50'
                       : 'border-slate-100 hover:border-slate-200 bg-white'
                   }`}
                 >
@@ -286,9 +286,9 @@ export function ForwardConfig() {
                       <p className="text-xs text-slate-400 mt-1">
                         {[model.ratedPowerKw ? `${model.ratedPowerKw}kW` : null, model.ratedEnergyKWh ? `${model.ratedEnergyKWh}kWh` : null].filter(Boolean).join(' / ') || '公开参数整理中'}
                       </p>
-                      <p className="text-blue-600 font-bold mt-2">{formatCurrency(model.basePrice)}</p>
+                      <p className="text-brand-600 font-bold mt-2">{formatCurrency(model.basePrice)}</p>
                     </div>
-                    {product?.id === model.id && <CheckCircle size={16} className="text-blue-500 shrink-0 mt-1" />}
+                    {product?.id === model.id && <CheckCircle size={16} className="text-brand-500 shrink-0 mt-1" />}
                   </div>
                 </button>
               ))}
@@ -333,13 +333,13 @@ export function ForwardConfig() {
                             disabled={isExcluded}
                             className={`relative p-3 rounded-xl border-2 text-left transition-all ${
                               isSelected
-                                ? 'border-blue-500 bg-blue-50'
+                                ? 'border-blue-500 bg-brand-50'
                                 : isExcluded
                                   ? 'border-red-200 bg-red-50/50 opacity-50 cursor-not-allowed'
                                   : 'border-slate-100 hover:border-slate-200 bg-white'
                             }`}
                           >
-                            {isSelected && <CheckCircle size={14} className="absolute top-2 right-2 text-blue-500" />}
+                            {isSelected && <CheckCircle size={14} className="absolute top-2 right-2 text-brand-500" />}
                             {isExcluded && <XCircle size={14} className="absolute top-2 right-2 text-red-400" />}
                             {option.isDefault && !isSelected && (
                               <Badge variant="default" className="text-[10px] absolute top-2 right-2">默认</Badge>
@@ -352,7 +352,7 @@ export function ForwardConfig() {
                               </span>
                               <div className="flex items-center gap-1">
                                 <div className="w-10 h-1 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-blue-400 rounded-full" style={{ width: `${option.performanceScore}%` }} />
+                                  <div className="h-full bg-brand-400 rounded-full" style={{ width: `${option.performanceScore}%` }} />
                                 </div>
                                 <span className="text-[10px] text-slate-400">{option.performanceScore}</span>
                               </div>
@@ -375,7 +375,7 @@ export function ForwardConfig() {
             <h3 className="font-semibold text-slate-900">价格汇总</h3>
           </CardHeader>
           <CardBody className="space-y-3">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-5 text-white">
+            <div className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl p-5 text-white">
               <p className="text-blue-200 text-sm">配置总报价</p>
               <p className="text-4xl font-bold mt-1">{formatCurrency(configuredPrice)}</p>
               <p className="text-blue-200 text-xs mt-1">预计毛利率 {(grossMargin * 100).toFixed(1)}%</p>
@@ -383,7 +383,7 @@ export function ForwardConfig() {
             <div className="space-y-2.5">
               {[
                 { label: '产品基础报价', value: product.basePrice, className: 'text-slate-700' },
-                { label: '选配价格增量', value: optionPriceDelta, className: 'text-blue-600' },
+                { label: '选配价格增量', value: optionPriceDelta, className: 'text-brand-600' },
                 { label: '产品基础成本', value: product.baseCost ?? 0, className: 'text-slate-500' },
                 { label: '选配成本增量', value: optionCostDelta, className: 'text-slate-500' },
                 { label: '毛利润', value: grossProfit, className: 'text-emerald-600' },
@@ -401,7 +401,7 @@ export function ForwardConfig() {
               </div>
               <div className="mt-1.5 h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full transition-all duration-500"
                   style={{ width: `${totalPerformance}%` }}
                 />
               </div>
@@ -414,7 +414,7 @@ export function ForwardConfig() {
             : roleGuide.tone === 'emerald' ? 'border-emerald-100 bg-emerald-50/70'
               : roleGuide.tone === 'purple' ? 'border-purple-100 bg-purple-50/70'
                 : roleGuide.tone === 'amber' ? 'border-amber-100 bg-amber-50/70'
-                  : 'border-blue-100 bg-blue-50/70'
+                  : 'border-brand-100 bg-brand-50/70'
         }`}>
           <CardBody className="p-4">
             <p className="text-sm font-semibold text-slate-900">{roleGuide.title}</p>

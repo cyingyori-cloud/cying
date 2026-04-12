@@ -19,7 +19,7 @@ function OptionRow({ opt, onSetDefault }: { opt: FeatureOption; onSetDefault: (i
     >
       <div className="relative flex items-center justify-center shrink-0">
         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${opt.isDefault ? 'border-blue-500' : 'border-slate-300 group-hover:border-blue-400'}`}>
-          {opt.isDefault && <div className="w-3 h-3 rounded-full bg-blue-500" />}
+          {opt.isDefault && <div className="w-3 h-3 rounded-full bg-brand-500" />}
         </div>
       </div>
       <div className="flex-1 min-w-0">
@@ -46,7 +46,7 @@ function OptionRow({ opt, onSetDefault }: { opt: FeatureOption; onSetDefault: (i
           <div className="flex items-center gap-1">
             <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
+                className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600"
                 style={{ width: `${opt.performanceScore}%` }}
               />
             </div>
@@ -68,7 +68,7 @@ function FeatureRow({ feature, options, onSetDefault }: { feature: Feature, opti
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 px-4 py-3 bg-slate-50/50 hover:bg-slate-50 transition-colors text-left"
       >
-        <Sliders size={15} className="text-blue-500 shrink-0" />
+        <Sliders size={15} className="text-brand-500 shrink-0" />
         <div className="flex-1">
           <span className="text-sm font-semibold text-slate-800">{feature.featureName}</span>
           <span className="ml-2 text-xs text-slate-400 font-mono">{feature.featureCode}</span>
@@ -109,8 +109,8 @@ function GroupSection({ group, options, onSetDefault }: { group: FeatureGroup, o
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 px-6 py-4 text-left"
       >
-        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-          <Settings size={16} className="text-blue-600" />
+        <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center shrink-0">
+          <Settings size={16} className="text-brand-600" />
         </div>
         <div className="flex-1">
           <h3 className="font-semibold text-slate-900">{group.groupName}</h3>
@@ -155,9 +155,9 @@ export function FeaturesPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <Card className="border border-blue-100 bg-blue-50/60 p-4">
+      <Card className="border border-brand-100 bg-brand-50/60 p-4">
         <div className="flex items-start gap-3">
-          <Tag size={18} className="text-blue-600 mt-0.5 shrink-0" />
+          <Tag size={18} className="text-brand-600 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-slate-900">储能特征配置库</p>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">{demoDataNotice}</p>
@@ -168,8 +168,8 @@ export function FeaturesPage() {
       {/* Header actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="bg-blue-50 rounded-xl p-3">
-            <Tag size={20} className="text-blue-600" />
+          <div className="bg-brand-50 rounded-xl p-3">
+            <Tag size={20} className="text-brand-600" />
           </div>
           <div>
             <h2 className="font-semibold text-slate-900">特征配置库</h2>
@@ -225,7 +225,7 @@ export function FeaturesPage() {
             <label className="block text-sm font-medium text-slate-700 mb-1">特征组代码</label>
             <input
               type="text"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
               placeholder="例如: GRP-XXX"
               value={newGroup.code}
               onChange={(e) => setNewGroup({ ...newGroup, code: e.target.value })}
@@ -235,7 +235,7 @@ export function FeaturesPage() {
             <label className="block text-sm font-medium text-slate-700 mb-1">特征组名称</label>
             <input
               type="text"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
               placeholder="例如: 核心部件配置"
               value={newGroup.name}
               onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
@@ -244,7 +244,7 @@ export function FeaturesPage() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">描述</label>
             <textarea
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
               rows={3}
               placeholder="特征组说明..."
               value={newGroup.description}

@@ -55,7 +55,7 @@ export function ApprovalWorkbench() {
     <div className="p-6 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4">
-          <div className="inline-flex rounded-xl bg-blue-50 p-2 text-blue-600"><Clock size={16} /></div>
+          <div className="inline-flex rounded-xl bg-brand-50 p-2 text-brand-600"><Clock size={16} /></div>
           <p className="mt-3 text-2xl font-bold text-slate-900">{pendingQuotes.length}</p>
           <p className="text-xs text-slate-500 mt-1">待审批报价单</p>
         </Card>
@@ -93,7 +93,7 @@ export function ApprovalWorkbench() {
               const currentStep = getCurrentApprovalStep(quotation);
               return (
                 <div key={quotation.id} className={`px-6 py-4 flex items-center gap-4 ${risky ? 'bg-red-50/40' : 'hover:bg-slate-50'}`}>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${risky ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${risky ? 'bg-red-50 text-red-500' : 'bg-brand-50 text-brand-500'}`}>
                     {risky ? <ShieldAlert size={16} /> : <Clock size={16} />}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -144,12 +144,12 @@ export function ApprovalWorkbench() {
               <p className="text-sm font-semibold text-amber-700">常规审批</p>
               <p className="text-xs text-amber-700 mt-1">毛利率处于正常区间时，重点确认方案摘要、商机归属和交付条件。</p>
             </div>
-            <div className="rounded-2xl bg-blue-50 p-4">
+            <div className="rounded-2xl bg-brand-50 p-4">
               <div className="flex items-center gap-2">
-                <Link2 size={14} className="text-blue-600" />
-                <p className="text-sm font-semibold text-blue-700">与纷享销客联动</p>
+                <Link2 size={14} className="text-brand-600" />
+                <p className="text-sm font-semibold text-brand-700">与纷享销客联动</p>
               </div>
-              <p className="text-xs text-blue-700 mt-1">审批通过后，报价状态回写到商机，销售可继续推进客户沟通。</p>
+              <p className="text-xs text-brand-700 mt-1">审批通过后，报价状态回写到商机，销售可继续推进客户沟通。</p>
             </div>
           </CardBody>
         </Card>
@@ -170,9 +170,9 @@ export function ApprovalWorkbench() {
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-blue-50 rounded-2xl p-4 text-center">
-                <p className="text-xs text-blue-400">报价金额</p>
-                <p className="text-2xl font-bold text-blue-700 mt-1">¥{viewQuote.totalPrice.toLocaleString()}</p>
+              <div className="bg-brand-50 rounded-2xl p-4 text-center">
+                <p className="text-xs text-brand-400">报价金额</p>
+                <p className="text-2xl font-bold text-brand-700 mt-1">¥{viewQuote.totalPrice.toLocaleString()}</p>
               </div>
               <div className="bg-slate-50 rounded-2xl p-4 text-center">
                 <p className="text-xs text-slate-400">成本</p>
@@ -212,7 +212,7 @@ export function ApprovalWorkbench() {
                       step.status === 'DONE'
                         ? 'bg-emerald-500 text-white'
                         : step.status === 'CURRENT'
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-brand-600 text-white'
                           : step.status === 'REJECTED'
                             ? 'bg-red-500 text-white'
                             : 'bg-slate-100 text-slate-400'
@@ -244,7 +244,7 @@ export function ApprovalWorkbench() {
             </div>
 
             {viewQuote.solutionSummary && (
-              <div className="rounded-2xl bg-blue-50 p-4">
+              <div className="rounded-2xl bg-brand-50 p-4">
                 <p className="text-sm font-semibold text-blue-800">方案摘要</p>
                 <p className="text-sm text-blue-800 mt-1">{viewQuote.solutionSummary}</p>
               </div>
