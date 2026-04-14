@@ -191,19 +191,20 @@ const SCENE_MAP = {
 
 module.exports = function setupWebhook(server) {
   /**
-   * GET /api/webhook/fxiaoke-sync
-   * Fxiaoke 按钮触发入口
+   * GET/POST /api/webhook/fxiaoke-sync
+   * Fxiaoke 按钮触发入口（支持 GET 和 POST）
    *
-   * Query 参数：
+   * GET Query 参数 或 POST body 参数：
    *   recordId  - 产品需求申请记录 ID（必需）
-   *   apiKey    - 调用凭证（可选，用于简单鉴权）
+   *   apiKey    - 调用凭证（可选）
    */
-  server.get('/api/webhook/fxiaoke-sync', async (req, res) => {
-    const { recordId } = req.query;
+  const handleSync = async (req, res) => {
+    // 支持 GET query 或 POST body
+    const recordId = req.query?.recordId || req.body?.recordId;
 
     // 简单鉴权：检查 X-Webhook-Secret 或 apiKey
     const secret = req.headers['x-webhook-secret'];
-    const apiKey = req.query.apiKey;
+    const apiKey = req.query?.apiKey || req.body?.apiKey;
     if (process.env.WEBHOOK_SECRET && secret !== process.env.WEBHOOK_SECRET && apiKey !== process.env.WEBHOOK_SECRET) {
       return res.status(403).json({ error: 'Forbidden', message: '无效的调用凭证' });
     }
@@ -454,4 +455,8 @@ module.exports = function setupWebhook(server) {
 </body></html>`);
     }
   });
+
+  // 同时注册 GET 和 POST 路由
+  server.get('/api/webhook/fxiaoke-sync', handleSync);
+  server.post('/api/webhook/fxiaoke-sync', handleSync);
 };
