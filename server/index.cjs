@@ -57,6 +57,15 @@ server.get('/api/products/:id', (req, res) => {
 // 受保护路由（需要 API Key）
 // ============================================================
 
+// 模组参考表（与前端 InquiryMatching.tsx 的 REFERENCE_ROWS 完全一致）
+const REFERENCE_ROWS = {
+  8:  { rackQty: 4, minVdc: 358.4, maxVdc: 441.6, backupEolMin: 8.52,  maxCurrent: 634.46 },
+  9:  { rackQty: 4, minVdc: 403.2, maxVdc: 496.8, backupEolMin: 9.58,  maxCurrent: 563.97 },
+  10: { rackQty: 4, minVdc: 448.0, maxVdc: 552.0, backupEolMin: 10.64, maxCurrent: 507.57 },
+  11: { rackQty: 3, minVdc: 492.8, maxVdc: 607.2, backupEolMin: 8.78,  maxCurrent: 615.23 },
+  12: { rackQty: 3, minVdc: 537.6, maxVdc: 662.4, backupEolMin: 9.58,  maxCurrent: 563.97 },
+};
+
 // 需求匹配计算
 server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams, (req, res) => {
   const {
@@ -99,14 +108,27 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
           if ((cabinetFire === '是') !== fireRequired) continue;
         }
 
-        // 计算参数
-        const cabinetCount = Math.ceil(moduleCount / product.specs.modulesPerCabinet);
-        const moduleEnergyKWh = (product.specs.modulePowerW / 1000) / product.specs.moduleDischargeRatio;
-        const estimatedEnergyKWh = moduleCount * moduleEnergyKWh;
-        const voltagePerModule = product.specs.moduleVoltageV;
-        const estimatedVoltage = voltagePerModule * moduleCount * (lineType === '3线' ? 1 : 0.8);
-        const estimatedCurrent = (targetPowerKw * 1000) / estimatedVoltage;
-        const estimatedBackupMinutes = (estimatedEnergyKWh / targetPowerKw) * 60;
+        // 计算参数：完全对齐前端 InquiryMatching.tsx REFERENCE_ROWS
+        const ref = REFERENCE_ROWS[moduleCount];
+        if (!ref) continue;
+
+        const cabinetCount = ref.rackQty;
+        const rackEnergyKWh = moduleCount * 1.86;  // 与原型一致：每模组1.86kWh
+        const estimatedEnergyKWh = Math.round(rackEnergyKWh * cabinetCount * 100) / 100;
+
+        const lineVoltageBoost = lineType === '3线' ? 1.0 : 0.92;
+        const fireVoltagePenalty = cabinetFire === '是' ? 0.99 : 1;
+        const estimatedMinVdc = Math.round(ref.minVdc * lineVoltageBoost * fireVoltagePenalty * 10) / 10;
+        const estimatedMaxVdc = Math.round(ref.maxVdc * lineVoltageBoost * fireVoltagePenalty * 10) / 10;
+
+        // estimatedVoltage 对齐原型：取 estimatedMaxVdc
+        const estimatedVoltage = estimatedMaxVdc;
+
+        const effectivePowerKw = targetPowerKw * 0.9 * 0.6;
+        const estimatedCurrent = Math.round((effectivePowerKw * 1000) / Math.max(estimatedMinVdc, 1) * 100) / 100;
+
+        // 备电时长：对齐原型参考值
+        const estimatedBackupMinutes = ref.backupEolMin;
 
         // Demo展示用：差异化状态标签
         const demoStatusIndex = (moduleCount + (moduleFire === '是' ? 2 : 0) + (lineType === '3线' ? 1 : 0)) % 10;
@@ -136,6 +158,8 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
           moduleFire,
           cabinetFire,
           estimatedEnergyKWh: Math.round(estimatedEnergyKWh * 100) / 100,
+          minVdc: estimatedMinVdc,
+          maxVdc: estimatedMaxVdc,
           estimatedVoltage: Math.round(estimatedVoltage * 10) / 10,
           estimatedCurrent: Math.round(estimatedCurrent * 100) / 100,
           estimatedBackupMinutes: Math.round(estimatedBackupMinutes * 10) / 10,
