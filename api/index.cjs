@@ -220,6 +220,12 @@ server.get('/api/quotations/:id', requireAuth, (req, res) => {
   res.json(quotation);
 });
 
+// ============================================================
+// Webhook 服务（Fxiaoke 同步闭环，必须在 json-server router 之前注册）
+// ============================================================
+const setupWebhook = require('./webhook/fxiaoke-sync.cjs');
+setupWebhook(server);
+
 // JSON Server 路由（处理其他 REST 路由）
 server.use(router);
 
