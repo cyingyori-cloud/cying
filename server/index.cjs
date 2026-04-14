@@ -278,6 +278,182 @@ server.use(jsonServer.rewriter({
   '/api/quotations/:id': '/quotations/records/:id',
 }));
 
+// ============================================================
+// Fxiaoke MCP HTTP Client（供 webhook 调用）
+// ============================================================
+
+const FX_MCP_URL = process.env.FXIAOKE_MCP_URL || 'https://open.fxiaoke.com/mcp/831345_sandbox/crm-mcp';
+const FX_API_KEY = process.env.FXIAOKE_APIKEY || 'FSUTK_25E0694A75F0E22A03268B45E86D87BA8A05188D09CAAB1002D1478D0C4ABE6D';
+
+/**
+ * 调用 Fxiaoke MCP 接口
+ * @param {string} toolName - 工具名，如 tools/call
+ * @param {object} params - JSON-RPC params
+ */
+async function fxMcpRequest(toolName, params = {}) {
+  const separator = FX_MCP_URL.includes('?') ? '&' : '?';
+  const url = `${FX_MCP_URL}${separator}apiKey=${FX_API_KEY}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method: toolName, params }),
+  });
+  if (!response.ok) throw new Error(`Fxiaoke MCP HTTP ${response.status}`);
+  const data = await response.json();
+  if (data.error) throw new Error(`Fxiaoke MCP error: ${data.error.message}`);
+  return data.result || data;
+}
+
+/**
+ * 调用 Fxiaoke MCP 工具
+ */
+async function fxMcpTool(toolName, args = {}) {
+  const result = await fxMcpRequest('tools/call', { name: toolName, arguments: args });
+  // 返回的是 [content]，content[0].text 是 JSON 字符串
+  if (result && result[0] && result[0].content) {
+    try { return JSON.parse(result[0].content[0].text); }
+    catch { return result[0].content[0].text; }
+  }
+  return result;
+}
+
+// ============================================================
+// CRM Sync Webhook
+// 接收 CRM 按钮触发 → 读CRM记录 → 算PowerQuote → 写CRM候选方案
+// ============================================================
+
+server.post('/api/fxiaoke/sync', requireAuth, async (req, res) => {
+  const { recordId } = req.body;
+  if (!recordId) return res.status(400).json({ error: '缺少 recordId' });
+
+  try {
+    console.log('[CRM Sync] 开始处理 recordId:', recordId);
+
+    // 1. 读取产品需求申请记录
+    const record = await fxMcpTool('GetDataById', {
+      object_api_name: 'product_requirement_applic__c',
+      record_id: recordId,
+    });
+    if (!record || record.errorCode) {
+      throw new Error(`读取CRM记录失败: ${JSON.stringify(record)}`);
+    }
+    console.log('[CRM Sync] 读取记录成功:', record.name || recordId);
+
+    // 2. 提取参数
+    const powerKw    = record.target_power_kw__c;
+    const capacityKwh = record.target_capacity_kwh__c;
+    const backupMin   = record.backup_power_duration_min__c;
+    const dcMin      = record.dc_min_voltage__c || 520;
+    const dcMax      = record.dc_max_voltage__c || 680;
+    const wiringVal  = record.wiring_mode__c;   // 1=3线 2=2线
+    const moduleFireVal  = record.module_fire_protection__c;   // 1=带 2=不带
+    const cabinetFireVal = record.cabinet_fire_protection__c;  // 1=带 2=不带
+
+    if (!powerKw || !capacityKwh || !backupMin) {
+      return res.status(400).json({ error: '目标功率、容量和备电时长为必填项' });
+    }
+
+    // 映射过滤值
+    const wiringApi       = (wiringVal == '1') ? '3线' : (wiringVal == '2') ? '2线' : 'ALL';
+    const moduleFireApi    = (moduleFireVal == '1') ? 'YES' : (moduleFireVal == '2') ? 'NO' : 'ALL';
+    const cabinetFireApi   = (cabinetFireVal == '1') ? 'YES' : (cabinetFireVal == '2') ? 'NO' : 'ALL';
+
+    console.log('[CRM Sync] 提交参数: 功率=' + powerKw + 'kW 容量=' + capacityKwh + 'kWh 备电=' + backupMin + 'min');
+
+    // 3. 调用 PowerQuote 计算
+    const pqResp = await fetch(`${req.protocol}://${req.get('host')}/api/demand-matching/calculate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': req.headers.authorization || '' },
+      body: JSON.stringify({
+        targetPowerKw: powerKw, targetEnergyKWh: capacityKwh,
+        backupMinutes: backupMin, dcVoltageMin: dcMin, dcVoltageMax: dcMax,
+        moduleCounts: [8, 9, 10, 11, 12, 14, 16],
+        moduleFireFilter: moduleFireApi, cabinetFireFilter: cabinetFireApi, lineTypeFilter: wiringApi,
+      }),
+    });
+    const pqData = await pqResp.json();
+    const plans = pqData.plans || [];
+    const demandId = pqData.demandId || '';
+
+    console.log('[CRM Sync] PowerQuote 返回 ' + plans.length + ' 个方案');
+
+    if (plans.length === 0) {
+      return res.json({ success: true, message: '无匹配方案', count: 0 });
+    }
+
+    // 4. 逐条写入候选方案清单
+    const writePlans = plans.slice(0, 10);
+    let successCount = 0, failCount = 0;
+    const errors = [];
+
+    for (let i = 0; i < writePlans.length; i++) {
+      const plan = writePlans[i];
+      try {
+        const statusLabel   = plan.analysisStatusLabel || '';
+        const statusDetail  = plan.analysisStatusDetail || '';
+        const statusValue   = statusLabel === '推荐方案' ? '1'
+                             : statusLabel === '电流边界' ? '2'
+                             : statusLabel === '时长临界' ? '3'
+                             : statusLabel === '可直接推进' ? '4' : 'other';
+
+        const planData = {
+          product_requirement_applic__c : recordId,
+          module_count__c                : plan.moduleCount || 0,
+          cabinet_number__c              : plan.cabinetCount || 0,
+          ai_matching_analysis_statu__c  : statusValue,
+          min_vdc__c                     : plan.minVdc || dcMin,
+          max_vdc__c                     : plan.maxVdc || dcMax,
+          max_discharge_current__c        : plan.estimatedCurrent || 0,
+          backup_power_duration_eol__c   : plan.estimatedBackupMinutes || 0,
+          estimated_voltage_v__c          : plan.estimatedVoltage || 0,
+          special_requirement_remark__c  : (plan.productName || '') + '\n' +
+            'SKU: ' + (plan.skuCode || '') + '\n' +
+            '接线: ' + (plan.lineType || '') + '\n' +
+            '模组消防: ' + (plan.moduleFire === '是' ? '带消防' : '不带消防') + '\n' +
+            '柜体消防: ' + (plan.cabinetFire === '是' ? '带消防' : '不带消防') + '\n' +
+            '功率: ' + powerKw + 'kW / 容量: ' + capacityKwh + 'kWh\n' +
+            '方案状态: ' + (plan.status || '') + '\n' +
+            '分析说明: ' + statusLabel + ' - ' + statusDetail + '\n' +
+            'demandId: ' + demandId,
+        };
+
+        const createResult = await fxMcpTool('CreateRecordsByData', {
+          apiName: 'candidate_solution_list__c',
+          object_data: planData,
+        });
+
+        if (createResult && createResult.id) {
+          successCount++;
+          console.log('[CRM Sync] 方案 ' + (i+1) + ' 写入成功:', createResult.id);
+        } else {
+          failCount++;
+          errors.push('方案' + (i+1) + ': ' + JSON.stringify(createResult));
+          console.log('[CRM Sync] 方案 ' + (i+1) + ' 写入失败:', JSON.stringify(createResult));
+        }
+      } catch (e) {
+        failCount++;
+        errors.push('方案' + (i+1) + '异常: ' + e.message);
+        console.log('[CRM Sync] 方案 ' + (i+1) + ' 异常:', e.message);
+      }
+    }
+
+    // 5. 返回结果
+    res.json({
+      success: true,
+      message: 'PowerQuote 智能匹配完成',
+      demandId,
+      totalPlans: plans.length,
+      writeSuccess: successCount,
+      writeFail: failCount,
+      errors: errors.slice(0, 3),  // 最多返回3条错误
+    });
+
+  } catch (err) {
+    console.error('[CRM Sync] 异常:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // JSON Server 路由（处理 GET/POST/DELETE 等）
 server.use(router);
 
