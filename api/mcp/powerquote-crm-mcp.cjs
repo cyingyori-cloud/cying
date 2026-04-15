@@ -1,8 +1,14 @@
-const PROTOCOL_VERSION = '2024-11-05';
+const { randomUUID } = require('node:crypto');
+const z = require('zod/v4');
+const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
+const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
+const { isInitializeRequest } = require('@modelcontextprotocol/sdk/types.js');
+
 const SERVER_INFO = {
   name: 'powerquote-mcp',
-  version: '1.1.0',
+  version: '1.2.0',
 };
+const SDK_VERSION = '1.29.0';
 
 const DEFAULT_MODULE_COUNTS = [8, 9, 10, 11, 12, 14, 16];
 const REFERENCE_ROWS = {
@@ -130,42 +136,16 @@ const TOOLS = [
   },
 ];
 
-function buildInitPayload() {
-  return {
-    protocolVersion: PROTOCOL_VERSION,
-    capabilities: { tools: {} },
-    serverInfo: SERVER_INFO,
-  };
-}
-
-function buildDiscoveryPayload(baseUrl = '') {
-  const prefix = baseUrl || '';
-  return {
-    ...buildInitPayload(),
-    description: 'PowerQuote 智能报价系统的 CRM 接入 MCP 服务',
-    endpoints: {
-      health: `${prefix}/mcp/health`,
-      rpc: `${prefix}/mcp`,
-      sse: `${prefix}/mcp/sse`,
-      tools: `${prefix}/mcp/tools`,
-    },
-    auth: {
-      required: hasMcpAuth(),
-      acceptedHeaders: ['Authorization: Bearer <token>', 'X-API-Key: <token>'],
-    },
-  };
-}
-
-function hasMcpAuth() {
-  return getConfiguredMcpKeys().length > 0;
-}
-
 function getConfiguredMcpKeys() {
   return [
     process.env.MCP_API_KEY,
     process.env.MCP_API_KEY_1,
     process.env.MCP_API_KEY_2,
   ].filter(Boolean);
+}
+
+function hasMcpAuth() {
+  return getConfiguredMcpKeys().length > 0;
 }
 
 function authorizeMcpRequest(req, res) {
@@ -194,35 +174,55 @@ function authorizeMcpRequest(req, res) {
 
 function setCommonHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, MCP-Session-Id, Last-Event-ID');
 }
 
-function sendSseEvent(res, event, payload) {
-  res.write(`event: ${event}\n`);
-  res.write(`data: ${JSON.stringify(payload)}\n\n`);
-  if (typeof res.flush === 'function') {
-    res.flush();
-  }
+function buildBaseUrl(req) {
+  const forwardedHost = req.get('x-forwarded-host');
+  const host = forwardedHost
+    ? forwardedHost.split(',')[0].trim()
+    : req.get('host');
+  return `${req.protocol}://${host}`;
 }
 
-function jsonRpcSuccess(id, result) {
+function buildInfoPayload(req) {
+  const baseUrl = buildBaseUrl(req);
   return {
-    jsonrpc: '2.0',
-    id: id ?? null,
-    result,
+    ...SERVER_INFO,
+    sdkVersion: SDK_VERSION,
+    description: 'PowerQuote 智能报价系统的官方 MCP SDK 远程服务',
+    recommendedTransport: {
+      type: 'streamable-http',
+      url: `${baseUrl}/mcp`,
+    },
+    compatibleAliases: [
+      `${baseUrl}/mcp/sse`,
+    ],
+    manualEndpoints: {
+      health: `${baseUrl}/mcp/health`,
+      info: `${baseUrl}/mcp/info`,
+      tools: `${baseUrl}/mcp/tools`,
+    },
+    auth: {
+      required: hasMcpAuth(),
+      acceptedHeaders: ['Authorization: Bearer <token>', 'X-API-Key: <token>'],
+    },
   };
 }
 
-function jsonRpcError(id, code, message) {
+function createRpcError(message, code = -32000) {
   return {
     jsonrpc: '2.0',
-    id: id ?? null,
-    error: { code, message },
+    id: null,
+    error: {
+      code,
+      message,
+    },
   };
 }
 
-function toTextResult(data, isError = false) {
+function serializeToolResult(data) {
   return {
     content: [
       {
@@ -230,7 +230,22 @@ function toTextResult(data, isError = false) {
         text: JSON.stringify(data, null, 2),
       },
     ],
-    ...(isError ? { isError: true } : {}),
+  };
+}
+
+function serializeToolError(error, toolName) {
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({
+          error: true,
+          tool: toolName,
+          message: error.message,
+        }, null, 2),
+      },
+    ],
+    isError: true,
   };
 }
 
@@ -251,13 +266,12 @@ function normalizeModuleCounts(moduleCounts) {
   if (!Array.isArray(moduleCounts) || moduleCounts.length === 0) {
     throw new Error('moduleCounts 必须是至少包含一个元素的数组');
   }
-  const normalized = moduleCounts.map((count) => {
+  return moduleCounts.map((count) => {
     if (typeof count !== 'number' || Number.isNaN(count)) {
       throw new Error('moduleCounts 中的值必须是数字');
     }
     return count;
   });
-  return normalized;
 }
 
 function calculateDemandMatching(db, args = {}) {
@@ -489,66 +503,213 @@ function getQuotation(db, args = {}) {
   return quotation;
 }
 
-async function handleToolCall(db, toolName, args) {
-  switch (toolName) {
-    case 'calculate_demand_matching':
-      return calculateDemandMatching(db, args);
-    case 'list_products':
-      return listProducts(db);
-    case 'get_product':
-      return getProduct(db, args);
-    case 'list_demand_records':
-      return listDemandRecords(db, args);
-    case 'get_demand_record':
-      return getDemandRecord(db, args);
-    case 'create_quotation':
-      return createQuotation(db, args);
-    case 'list_quotations':
-      return listQuotations(db, args);
-    case 'get_quotation':
-      return getQuotation(db, args);
-    default:
-      throw new Error(`Unknown tool: ${toolName}`);
-  }
-}
+function createPowerQuoteMcpServer(db) {
+  const mcpServer = new McpServer(SERVER_INFO, {
+    capabilities: {
+      logging: {},
+    },
+  });
 
-async function executeRpc(db, payload) {
-  const { method, params, id } = payload || {};
-
-  switch (method) {
-    case 'initialize':
-      return jsonRpcSuccess(id, buildInitPayload());
-    case 'tools/list':
-      return jsonRpcSuccess(id, { tools: TOOLS });
-    case 'tools/call': {
-      const { name, arguments: args } = params || {};
-      if (!name) {
-        return jsonRpcSuccess(id, toTextResult({ error: true, message: 'missing tool name' }, true));
-      }
-
+  mcpServer.registerTool(
+    'calculate_demand_matching',
+    {
+      description: '根据客户需求参数计算匹配的方案列表。这是 PowerQuote 智能报价的核心入口。',
+      inputSchema: {
+        targetPowerKw: z.number().min(1).max(10000).describe('目标功率，单位 kW。例如 420'),
+        targetEnergyKWh: z.number().min(1).max(10000).describe('目标能量，单位 kWh。例如 60'),
+        backupMinutes: z.number().min(0).max(1440).describe('备电时长，单位分钟。例如 120'),
+        dcVoltageMin: z.number().min(0).max(1000).optional().default(520).describe('DC 电压下限，单位 V。例如 520'),
+        dcVoltageMax: z.number().min(0).max(1000).optional().default(680).describe('DC 电压上限，单位 V。例如 680'),
+        moduleCounts: z.array(z.number()).min(1).optional().default(DEFAULT_MODULE_COUNTS).describe('模组数量候选列表'),
+        moduleFireFilter: z.enum(['ALL', 'YES', 'NO']).optional().default('ALL').describe('模组消防过滤'),
+        cabinetFireFilter: z.enum(['ALL', 'YES', 'NO']).optional().default('ALL').describe('柜体消防过滤'),
+        lineTypeFilter: z.enum(['ALL', '2线', '3线']).optional().default('ALL').describe('接线方式过滤'),
+      },
+    },
+    async (args) => {
       try {
-        const data = await handleToolCall(db, name, args || {});
-        return jsonRpcSuccess(id, toTextResult(data));
+        return serializeToolResult(calculateDemandMatching(db, args));
       } catch (error) {
-        return jsonRpcSuccess(
-          id,
-          toTextResult(
-            {
-              error: true,
-              tool: name,
-              message: error.message,
-            },
-            true
-          )
-        );
+        return serializeToolError(error, 'calculate_demand_matching');
       }
     }
-    default:
-      return jsonRpcError(id, -32601, `Method not found: ${method}`);
+  );
+
+  mcpServer.registerTool(
+    'list_products',
+    {
+      description: '查询 PowerQuote 产品目录，返回全部产品及规格参数。',
+    },
+    async () => serializeToolResult(listProducts(db))
+  );
+
+  mcpServer.registerTool(
+    'get_product',
+    {
+      description: '根据产品 ID 查询单个产品详情。',
+      inputSchema: {
+        productId: z.string().min(1).describe('产品 ID，例如 P001'),
+      },
+    },
+    async (args) => {
+      try {
+        return serializeToolResult(getProduct(db, args));
+      } catch (error) {
+        return serializeToolError(error, 'get_product');
+      }
+    }
+  );
+
+  mcpServer.registerTool(
+    'list_demand_records',
+    {
+      description: '查询历史需求匹配记录。',
+      inputSchema: {
+        limit: z.number().int().positive().optional().describe('返回记录数量限制，默认 10'),
+      },
+    },
+    async (args) => serializeToolResult(listDemandRecords(db, args))
+  );
+
+  mcpServer.registerTool(
+    'get_demand_record',
+    {
+      description: '根据需求记录 ID 查询完整匹配结果。',
+      inputSchema: {
+        demandId: z.string().min(1).describe('需求记录 ID，例如 demand_1712345678900'),
+      },
+    },
+    async (args) => {
+      try {
+        return serializeToolResult(getDemandRecord(db, args));
+      } catch (error) {
+        return serializeToolError(error, 'get_demand_record');
+      }
+    }
+  );
+
+  mcpServer.registerTool(
+    'create_quotation',
+    {
+      description: '基于选定方案创建报价单。',
+      inputSchema: {
+        demandId: z.string().min(1).describe('关联的需求记录 ID'),
+        planId: z.string().min(1).describe('选定方案 ID'),
+        customerName: z.string().min(1).describe('客户名称'),
+        contactPerson: z.string().optional().describe('联系人'),
+        contactPhone: z.string().optional().describe('联系电话'),
+        notes: z.string().optional().describe('备注说明'),
+      },
+    },
+    async (args) => {
+      try {
+        return serializeToolResult(createQuotation(db, args));
+      } catch (error) {
+        return serializeToolError(error, 'create_quotation');
+      }
+    }
+  );
+
+  mcpServer.registerTool(
+    'list_quotations',
+    {
+      description: '查询报价单列表。',
+      inputSchema: {
+        limit: z.number().int().positive().optional().describe('返回记录数量限制，默认 10'),
+      },
+    },
+    async (args) => serializeToolResult(listQuotations(db, args))
+  );
+
+  mcpServer.registerTool(
+    'get_quotation',
+    {
+      description: '根据报价单 ID 查询报价单详情。',
+      inputSchema: {
+        quotationId: z.string().min(1).describe('报价单 ID，例如 quote_1712345678900'),
+      },
+    },
+    async (args) => {
+      try {
+        return serializeToolResult(getQuotation(db, args));
+      } catch (error) {
+        return serializeToolError(error, 'get_quotation');
+      }
+    }
+  );
+
+  return mcpServer;
+}
+
+function cleanupSession(sessions, sessionId) {
+  const entry = sessions.get(sessionId);
+  if (!entry || entry.cleanedUp) {
+    return;
+  }
+
+  entry.cleanedUp = true;
+  sessions.delete(sessionId);
+  entry.server.close().catch(() => {});
+}
+
+async function handleStreamableRequest(req, res, db, sessions) {
+  if (!authorizeMcpRequest(req, res)) {
+    return;
+  }
+
+  const sessionIdHeader = Array.isArray(req.headers['mcp-session-id'])
+    ? req.headers['mcp-session-id'][0]
+    : req.headers['mcp-session-id'];
+
+  try {
+    let entry = sessionIdHeader ? sessions.get(sessionIdHeader) : undefined;
+    let transport;
+
+    if (entry) {
+      transport = entry.transport;
+    } else if (!sessionIdHeader && req.method === 'POST' && isInitializeRequest(req.body)) {
+      const server = createPowerQuoteMcpServer(db);
+      transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        onsessioninitialized: (sessionId) => {
+          sessions.set(sessionId, { transport, server, cleanedUp: false });
+        },
+      });
+
+      transport.onclose = () => {
+        if (transport.sessionId) {
+          cleanupSession(sessions, transport.sessionId);
+        }
+      };
+
+      transport.onerror = (error) => {
+        console.error('[PowerQuote MCP] Streamable transport error:', error);
+      };
+
+      await server.connect(transport);
+    } else {
+      res.status(sessionIdHeader ? 404 : 400).json(
+        createRpcError(
+          sessionIdHeader
+            ? 'Session not found or expired'
+            : 'Bad Request: initialize must be sent with POST before using this transport'
+        )
+      );
+      return;
+    }
+
+    await transport.handleRequest(req, res, req.body);
+  } catch (error) {
+    console.error('[PowerQuote MCP] Streamable request failed:', error);
+    if (!res.headersSent) {
+      res.status(500).json(createRpcError('Internal server error', -32603));
+    }
   }
 }
 
 function registerPowerQuoteCrmMcp(server, { router }) {
+  const streamableSessions = new Map();
+
   server.use('/mcp', (req, res, next) => {
     setCommonHeaders(res);
     if (req.method === 'OPTIONS') {
@@ -565,9 +726,18 @@ function registerPowerQuoteCrmMcp(server, { router }) {
     res.json({
       status: 'ok',
       ...SERVER_INFO,
-      protocolVersion: PROTOCOL_VERSION,
-      transport: ['sse', 'json-rpc'],
+      sdkVersion: SDK_VERSION,
+      transports: ['streamable-http'],
+      compatibleAliases: ['/mcp/sse'],
     });
+  });
+
+  server.get('/mcp/info', (req, res) => {
+    if (!authorizeMcpRequest(req, res)) {
+      return;
+    }
+
+    res.json(buildInfoPayload(req));
   });
 
   server.get('/mcp/tools', (req, res) => {
@@ -578,78 +748,13 @@ function registerPowerQuoteCrmMcp(server, { router }) {
     res.json({ tools: TOOLS });
   });
 
-  server.get('/mcp', (req, res) => {
-    if (!authorizeMcpRequest(req, res)) {
-      return;
-    }
-
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    res.json(buildDiscoveryPayload(baseUrl));
+  server.all('/mcp', async (req, res) => {
+    await handleStreamableRequest(req, res, router.db, streamableSessions);
   });
 
-  server.get('/mcp/sse', (req, res) => {
-    if (!authorizeMcpRequest(req, res)) {
-      return;
-    }
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    if (typeof res.flushHeaders === 'function') {
-      res.flushHeaders();
-    }
-
-    sendSseEvent(res, 'message', buildInitPayload());
-    sendSseEvent(res, 'tools', { tools: TOOLS });
-
-    const heartbeat = setInterval(() => {
-      try {
-        res.write(': heartbeat\n\n');
-        if (typeof res.flush === 'function') {
-          res.flush();
-        }
-      } catch (error) {
-        clearInterval(heartbeat);
-      }
-    }, 20000);
-
-    req.on('close', () => {
-      clearInterval(heartbeat);
-    });
-  });
-
-  server.post('/mcp/sse', async (req, res) => {
-    if (!authorizeMcpRequest(req, res)) {
-      return;
-    }
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    if (typeof res.flushHeaders === 'function') {
-      res.flushHeaders();
-    }
-
-    const payload = req.body || {};
-    const response = await executeRpc(router.db, payload);
-    sendSseEvent(res, 'message', response);
-    res.end();
-  });
-
-  server.post('/mcp', async (req, res) => {
-    if (!authorizeMcpRequest(req, res)) {
-      return;
-    }
-
-    const payload = req.body || {};
-    if (payload.jsonrpc && payload.jsonrpc !== '2.0') {
-      return res.status(400).json(jsonRpcError(payload.id, -32600, 'Invalid Request: jsonrpc must be 2.0'));
-    }
-
-    const response = await executeRpc(router.db, payload);
-    res.json(response);
+  // 为仍然写死 /mcp/sse 的远端客户端保留一个官方 Streamable HTTP 别名。
+  server.all('/mcp/sse', async (req, res) => {
+    await handleStreamableRequest(req, res, router.db, streamableSessions);
   });
 }
 
