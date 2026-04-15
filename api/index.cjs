@@ -252,11 +252,8 @@ server.get('/api/quotations/:id', requireAuth, (req, res) => {
 const setupWebhook = require('./webhook/fxiaoke-sync.cjs');
 setupWebhook(server);
 
-// JSON Server 路由（处理其他 REST 路由）
-server.use(router);
-
 // ============================================================
-// MCP (Model Context Protocol) 接口（必须在静态文件之前）
+// MCP (Model Context Protocol) 接口（必须在 json-server router 之前注册）
 // ============================================================
 
 const MCP_TOOLS = [
@@ -523,6 +520,11 @@ server.post('/mcp', (req, res) => {
 server.get('/mcp', (req, res) => {
   res.json({ service: 'PowerQuote MCP Server', version: '1.0.0', tools: MCP_TOOLS.map(t => t.name) });
 });
+
+// ============================================================
+// JSON Server 路由（处理其他 REST 路由，必须在 MCP 路由之后）
+// ============================================================
+server.use(router);
 
 // ============================================================
 // 前端静态文件
