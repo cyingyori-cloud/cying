@@ -2,6 +2,7 @@ const { randomUUID } = require('node:crypto');
 const z = require('zod/v4');
 const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
 const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
+const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js');
 const { isInitializeRequest } = require('@modelcontextprotocol/sdk/types.js');
 
 const LEGACY_PROTOCOL_VERSION = '2024-11-05';
@@ -212,18 +213,6 @@ function buildInfoPayload(req) {
   };
 }
 
-function buildLegacyInitPayload() {
-  return {
-    protocolVersion: LEGACY_PROTOCOL_VERSION,
-    capabilities: { tools: {} },
-    serverInfo: SERVER_INFO,
-  };
-}
-
-function buildLegacyToolListPayload() {
-  return { tools: TOOLS };
-}
-
 function createRpcError(message, code = -32000) {
   return {
     jsonrpc: '2.0',
@@ -259,14 +248,6 @@ function serializeToolError(error, toolName) {
       },
     ],
     isError: true,
-  };
-}
-
-function jsonRpcSuccess(id, result) {
-  return {
-    jsonrpc: '2.0',
-    id: id ?? null,
-    result,
   };
 }
 
@@ -524,29 +505,6 @@ function getQuotation(db, args = {}) {
   return quotation;
 }
 
-async function handleToolCall(db, toolName, args) {
-  switch (toolName) {
-    case 'calculate_demand_matching':
-      return calculateDemandMatching(db, args);
-    case 'list_products':
-      return listProducts(db);
-    case 'get_product':
-      return getProduct(db, args);
-    case 'list_demand_records':
-      return listDemandRecords(db, args);
-    case 'get_demand_record':
-      return getDemandRecord(db, args);
-    case 'create_quotation':
-      return createQuotation(db, args);
-    case 'list_quotations':
-      return listQuotations(db, args);
-    case 'get_quotation':
-      return getQuotation(db, args);
-    default:
-      throw new Error(`Unknown tool: ${toolName}`);
-  }
-}
-
 function createPowerQuoteMcpServer(db) {
   const mcpServer = new McpServer(SERVER_INFO, {
     capabilities: {
@@ -685,50 +643,6 @@ function createPowerQuoteMcpServer(db) {
   return mcpServer;
 }
 
-function sendLegacySseEvent(res, event, payload) {
-  res.write(`event: ${event}\n`);
-  res.write(`data: ${JSON.stringify(payload)}\n\n`);
-  if (typeof res.flush === 'function') {
-    res.flush();
-  }
-}
-
-async function executeLegacyRpc(db, payload) {
-  const { method, params, id } = payload || {};
-
-  switch (method) {
-    case 'initialize':
-      return jsonRpcSuccess(id, buildLegacyInitPayload());
-    case 'tools/list':
-      return jsonRpcSuccess(id, buildLegacyToolListPayload());
-    case 'tools/call': {
-      const { name, arguments: args } = params || {};
-      if (!name) {
-        return jsonRpcSuccess(
-          id,
-          serializeToolError(new Error('missing tool name'), 'unknown')
-        );
-      }
-
-      try {
-        const data = await handleToolCall(db, name, args || {});
-        return jsonRpcSuccess(id, serializeToolResult(data));
-      } catch (error) {
-        return jsonRpcSuccess(id, serializeToolError(error, name));
-      }
-    }
-    default:
-      return {
-        jsonrpc: '2.0',
-        id: id ?? null,
-        error: {
-          code: -32601,
-          message: `Method not found: ${method}`,
-        },
-      };
-  }
-}
-
 function cleanupSession(sessions, sessionId) {
   const entry = sessions.get(sessionId);
   if (!entry || entry.cleanedUp) {
@@ -797,6 +711,7 @@ async function handleStreamableRequest(req, res, db, sessions) {
 
 function registerPowerQuoteCrmMcp(server, { router }) {
   const streamableSessions = new Map();
+  const legacySseSessions = new Map();
 
   server.use('/mcp', (req, res, next) => {
     setCommonHeaders(res);
@@ -840,55 +755,50 @@ function registerPowerQuoteCrmMcp(server, { router }) {
     await handleStreamableRequest(req, res, router.db, streamableSessions);
   });
 
-  // 兼容纷享销客等仍使用 2024-11-05 老式 SSE 握手的客户端。
+  // 兼容纷享销客等仍使用 2024-11-05 官方旧式 SSE transport 的客户端。
   server.get('/mcp/sse', async (req, res) => {
     if (!authorizeMcpRequest(req, res)) {
       return;
     }
 
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    if (typeof res.flushHeaders === 'function') {
-      res.flushHeaders();
-    }
+    try {
+      const legacyServer = createPowerQuoteMcpServer(router.db);
+      const transport = new SSEServerTransport('/mcp/messages', res);
+      legacySseSessions.set(transport.sessionId, { transport, server: legacyServer, cleanedUp: false });
 
-    sendLegacySseEvent(res, 'message', buildLegacyInitPayload());
-    sendLegacySseEvent(res, 'tools', buildLegacyToolListPayload());
+      res.on('close', () => {
+        cleanupSession(legacySseSessions, transport.sessionId);
+      });
 
-    const heartbeat = setInterval(() => {
-      try {
-        res.write(': heartbeat\n\n');
-        if (typeof res.flush === 'function') {
-          res.flush();
-        }
-      } catch {
-        clearInterval(heartbeat);
+      await legacyServer.connect(transport);
+    } catch (error) {
+      console.error('[PowerQuote MCP] Legacy SSE bootstrap failed:', error);
+      if (!res.headersSent) {
+        res.status(500).json(createRpcError('Legacy SSE bootstrap failed', -32603));
       }
-    }, 20000);
-
-    req.on('close', () => {
-      clearInterval(heartbeat);
-    });
+    }
   });
 
-  server.post('/mcp/sse', async (req, res) => {
+  server.post('/mcp/messages', async (req, res) => {
     if (!authorizeMcpRequest(req, res)) {
       return;
     }
 
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    if (typeof res.flushHeaders === 'function') {
-      res.flushHeaders();
+    const sessionId = req.query.sessionId;
+    const entry = typeof sessionId === 'string' ? legacySseSessions.get(sessionId) : undefined;
+
+    if (!entry) {
+      return res.status(400).json(createRpcError('No transport found for sessionId'));
     }
 
-    const response = await executeLegacyRpc(router.db, req.body || {});
-    sendLegacySseEvent(res, 'message', response);
-    res.end();
+    try {
+      await entry.transport.handlePostMessage(req, res, req.body);
+    } catch (error) {
+      console.error('[PowerQuote MCP] Legacy SSE message handling failed:', error);
+      if (!res.headersSent) {
+        res.status(500).json(createRpcError('Legacy SSE message handling failed', -32603));
+      }
+    }
   });
 }
 
