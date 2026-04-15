@@ -297,8 +297,9 @@ const MCP_TOOLS = [
 
 server.get('/mcp/sse', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.flushHeaders();
 
@@ -309,15 +310,18 @@ server.get('/mcp/sse', (req, res) => {
     serverInfo: { name: 'powerquote-mcp', version: '1.0.0' }
   });
   res.write(`event: message\ndata: ${initPayload}\n\n`);
+  if (typeof res.flush === 'function') res.flush();
 
   // 发送工具列表事件
   const toolsPayload = JSON.stringify({ tools: MCP_TOOLS });
   res.write(`event: tools\ndata: ${toolsPayload}\n\n`);
+  if (typeof res.flush === 'function') res.flush();
 
   // 心跳保活（每 25 秒）
   const heartbeat = setInterval(() => {
     try {
       res.write(': heartbeat\n\n');
+      if (typeof res.flush === 'function') res.flush();
     } catch (e) {
       clearInterval(heartbeat);
     }
