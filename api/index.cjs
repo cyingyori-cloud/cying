@@ -252,6 +252,12 @@ server.get('/api/quotations/:id', requireAuth, (req, res) => {
 const setupWebhook = require('./webhook/fxiaoke-sync.cjs');
 setupWebhook(server);
 
+// 兼容路由：按钮代码调用 /api/fxiaoke/sync（与 /api/webhook/fxiaoke-sync 同逻辑）
+// 从 webhook 模块导出 handleSync 供此处复用
+const { handleFxiaokeSync } = require('./webhook/fxiaoke-sync.cjs');
+server.get('/api/fxiaoke/sync', handleFxiaokeSync);
+server.post('/api/fxiaoke/sync', handleFxiaokeSync);
+
 // ============================================================
 // MCP (Model Context Protocol) 接口（必须在 json-server router 之前注册）
 // ============================================================

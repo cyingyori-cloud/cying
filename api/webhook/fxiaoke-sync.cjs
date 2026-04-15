@@ -189,16 +189,15 @@ const SCENE_MAP = {
 // Express 路由
 // ============================================================
 
-module.exports = function setupWebhook(server) {
-  /**
-   * GET/POST /api/webhook/fxiaoke-sync
-   * Fxiaoke 按钮触发入口（支持 GET 和 POST）
-   *
-   * GET Query 参数 或 POST body 参数：
-   *   recordId  - 产品需求申请记录 ID（必需）
-   *   apiKey    - 调用凭证（可选）
-   */
-  const handleSync = async (req, res) => {
+/**
+ * GET/POST /api/webhook/fxiaoke-sync
+ * Fxiaoke 按钮触发入口（支持 GET 和 POST）
+ *
+ * GET Query 参数 或 POST body 参数：
+ *   recordId  - 产品需求申请记录 ID（必需）
+ *   apiKey    - 调用凭证（可选）
+ */
+const handleFxiaokeSync = async (req, res) => {
     // 支持 GET query 或 POST body
     const recordId = req.query?.recordId || req.body?.recordId;
 
@@ -433,7 +432,7 @@ module.exports = function setupWebhook(server) {
         return res.json({ success: false, code: 1, message: error.message });
       }
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.send(`<!DOCTYPE html>
+      return       res.send(`<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><title>同步失败</title>
 <style>
   body { font-family: sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
@@ -455,8 +454,13 @@ module.exports = function setupWebhook(server) {
 </body></html>`);
     }
   };
-
-  // 同时注册 GET 和 POST 路由
-  server.get('/api/webhook/fxiaoke-sync', handleSync);
-  server.post('/api/webhook/fxiaoke-sync', handleSync);
 };
+
+// 注册 GET/POST 路由（供 setupWebhook 调用）
+module.exports = function setupWebhook(server) {
+  server.get('/api/webhook/fxiaoke-sync', handleFxiaokeSync);
+  server.post('/api/webhook/fxiaoke-sync', handleFxiaokeSync);
+};
+
+// 单独导出 handler（供 index.cjs 直接复用路由路径）
+module.exports.handleFxiaokeSync = handleFxiaokeSync;
