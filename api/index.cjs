@@ -25,6 +25,9 @@ const REFERENCE_ROWS = {
 const server = jsonServer.create();
 const router = jsonServer.router(path.join(__dirname, 'db/db.json'));
 
+// 让 Express 在 Railway 反向代理后正确识别 HTTPS / Host
+server.set('trust proxy', true);
+
 // JSON Server 默认中间件（CORS等）
 server.use(jsonServer.defaults());
 // 解析 JSON body
