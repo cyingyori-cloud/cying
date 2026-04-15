@@ -292,6 +292,141 @@ const MCP_TOOLS = [
   }
 ];
 
+// ============================================================
+// MCP SSE 端点（纷享销客等 AI 客户端使用 SSE 连接）
+// GET /mcp/sse  — 建立 SSE 长连接，获取服务信息和工具列表
+// POST /mcp/sse — SSE 通道里的工具调用（Streamable HTTP）
+// ============================================================
+
+server.get('/mcp/sse', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.flushHeaders();
+
+  // 发送初始化事件
+  const initPayload = JSON.stringify({
+    protocolVersion: '2024-11-05',
+    capabilities: { tools: {} },
+    serverInfo: { name: 'powerquote-mcp', version: '1.0.0' }
+  });
+  res.write(`event: message\ndata: ${initPayload}\n\n`);
+
+  // 发送工具列表事件
+  const toolsPayload = JSON.stringify({ tools: MCP_TOOLS });
+  res.write(`event: tools\ndata: ${toolsPayload}\n\n`);
+
+  // 心跳保活（每 25 秒）
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': heartbeat\n\n');
+    } catch (e) {
+      clearInterval(heartbeat);
+    }
+  }, 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+  });
+});
+
+server.post('/mcp/sse', async (req, res) => {
+  const { method, params, id } = req.body || {};
+  const db = router.db;
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.flushHeaders();
+
+  const sendEvent = (data) => {
+    res.write(`event: message\ndata: ${JSON.stringify({ jsonrpc: '2.0', id, result: data })}\n\n`);
+  };
+
+  try {
+    let result;
+    switch (method) {
+      case 'initialize':
+        result = {
+          protocolVersion: '2024-11-05',
+          capabilities: { tools: {} },
+          serverInfo: { name: 'powerquote-mcp', version: '1.0.0' }
+        };
+        break;
+      case 'tools/list':
+        result = { tools: MCP_TOOLS };
+        break;
+      case 'tools/call': {
+        const { name, arguments: args } = params || {};
+        switch (name) {
+          case 'calculate_demand_matching': {
+            const { targetPowerKw, targetEnergyKWh, backupMinutes, dcVoltageMin = 520, dcVoltageMax = 680, moduleCounts = [8, 9, 10, 12] } = args || {};
+            const products = db.get('products').value();
+            const plans = [];
+            let planId = Date.now();
+            for (const moduleCount of moduleCounts) {
+              for (const product of products) {
+                if (!product.specs) continue;
+                for (const lineType of ['2线', '3线']) {
+                  const demoStatusIndex = (moduleCount + (lineType === '3线' ? 1 : 0)) % 8;
+                  const demoLabels = [
+                    { label: '推荐方案', detail: '柜数更少、边界更稳、适合优先推进' },
+                    { label: '可直接推进', detail: '电压、电流与时长均在边界内' },
+                    { label: '时长临界', detail: '备电时长接近目标边界' },
+                    { label: '电流边界', detail: '已接近 600A 边界' },
+                    { label: '需补充说明', detail: '需写清客户特殊要求' },
+                    { label: '需技术确认', detail: '存在技术边界情况' },
+                    { label: '电压超界', detail: '超出客户要求电压' },
+                    { label: '超限需复核', detail: '超出关键边界，不建议直接报价' },
+                  ];
+                  const demoStatus = demoLabels[demoStatusIndex];
+                  plans.push({
+                    id: `plan_${planId++}`,
+                    skuCode: `${product.modelCode || product.id}-M${moduleCount}-${lineType === '2线' ? '2L' : '3L'}`,
+                    productId: product.id,
+                    productName: product.modelName,
+                    moduleCount,
+                    cabinetCount: Math.max(1, Math.round(targetEnergyKWh / (moduleCount * 1.86))),
+                    lineType,
+                    estimatedVoltage: Math.round(moduleCount * 44.8),
+                    estimatedCurrent: Math.round((targetPowerKw * 1000) / (moduleCount * 44.8 * 0.92)),
+                    analysisStatusLabel: demoStatus.label,
+                    analysisStatusDetail: demoStatus.detail,
+                    status: demoStatus.label === '电压超界' || demoStatus.label === '超限需复核' ? 'INVALID' : 'VALID',
+                    rankScore: Math.round(100 - Math.abs(moduleCount - 8) * 5),
+                  });
+                }
+              }
+            }
+            plans.sort((a, b) => b.rankScore - a.rankScore);
+            if (plans[0]) { plans[0].recommended = true; plans[0].analysisStatusLabel = '推荐方案'; }
+            result = { content: [{ type: 'text', text: JSON.stringify({ demandId: `demand_${Date.now()}`, plans: plans.slice(0, 10), stats: { totalPlans: plans.length, validPlans: plans.filter(p => p.status === 'VALID').length } }, null, 2) }] };
+            break;
+          }
+          case 'list_products':
+            result = { content: [{ type: 'text', text: JSON.stringify(db.get('products').value(), null, 2) }] };
+            break;
+          case 'get_product':
+            result = { content: [{ type: 'text', text: JSON.stringify(db.get('products').find({ id: (args || {}).productId }).value() || { error: 'Product not found' }, null, 2) }] };
+            break;
+          default:
+            throw new Error(`Unknown tool: ${name}`);
+        }
+        break;
+      }
+      default:
+        result = { error: `Unknown method: ${method}` };
+    }
+    sendEvent(result);
+  } catch (err) {
+    res.write(`event: message\ndata: ${JSON.stringify({ jsonrpc: '2.0', id, error: { code: -32000, message: err.message } })}\n\n`);
+  }
+
+  res.end();
+});
+
 // MCP 初始化
 server.post('/mcp', (req, res) => {
   const { method, params } = req.body;
