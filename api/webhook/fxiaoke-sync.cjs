@@ -453,7 +453,6 @@ const handleFxiaokeSync = async (req, res) => {
 </div>
 </body></html>`);
     }
-  };
 };
 
 // 注册 GET/POST 路由（供 setupWebhook 调用）

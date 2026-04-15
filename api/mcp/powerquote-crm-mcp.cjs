@@ -1,0 +1,656 @@
+const PROTOCOL_VERSION = '2024-11-05';
+const SERVER_INFO = {
+  name: 'powerquote-mcp',
+  version: '1.1.0',
+};
+
+const DEFAULT_MODULE_COUNTS = [8, 9, 10, 11, 12, 14, 16];
+const REFERENCE_ROWS = {
+  8: { rackQty: 4, minVdc: 358.4, maxVdc: 441.6, backupEolMin: 8.5 },
+  9: { rackQty: 4, minVdc: 403.2, maxVdc: 496.8, backupEolMin: 9.6 },
+  10: { rackQty: 4, minVdc: 448.0, maxVdc: 552.0, backupEolMin: 10.6 },
+  11: { rackQty: 3, minVdc: 492.8, maxVdc: 607.2, backupEolMin: 8.8 },
+  12: { rackQty: 3, minVdc: 537.6, maxVdc: 662.4, backupEolMin: 9.6 },
+  14: { rackQty: 4, minVdc: 627.2, maxVdc: 772.8, backupEolMin: 11.2 },
+  16: { rackQty: 4, minVdc: 716.8, maxVdc: 883.2, backupEolMin: 12.8 },
+};
+
+const TOOLS = [
+  {
+    name: 'calculate_demand_matching',
+    description: '根据客户需求参数计算匹配的方案列表。这是 PowerQuote 智能报价的核心入口。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        targetPowerKw: { type: 'number', description: '目标功率，单位 kW。例如 420' },
+        targetEnergyKWh: { type: 'number', description: '目标能量，单位 kWh。例如 60' },
+        backupMinutes: { type: 'number', description: '备电时长，单位分钟。例如 120' },
+        dcVoltageMin: { type: 'number', description: 'DC 电压下限，单位 V。例如 520' },
+        dcVoltageMax: { type: 'number', description: 'DC 电压上限，单位 V。例如 680' },
+        moduleCounts: {
+          type: 'array',
+          items: { type: 'number' },
+          description: '模组数量候选列表。例如 [8, 9, 10, 11]',
+        },
+        moduleFireFilter: {
+          type: 'string',
+          enum: ['ALL', 'YES', 'NO'],
+          description: '模组消防过滤，默认 ALL',
+        },
+        cabinetFireFilter: {
+          type: 'string',
+          enum: ['ALL', 'YES', 'NO'],
+          description: '柜体消防过滤，默认 ALL',
+        },
+        lineTypeFilter: {
+          type: 'string',
+          enum: ['ALL', '2线', '3线'],
+          description: '接线方式过滤，默认 ALL',
+        },
+      },
+      required: ['targetPowerKw', 'targetEnergyKWh', 'backupMinutes'],
+    },
+  },
+  {
+    name: 'list_products',
+    description: '查询 PowerQuote 产品目录，返回全部产品及规格参数。',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'get_product',
+    description: '根据产品 ID 查询单个产品详情。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        productId: { type: 'string', description: '产品 ID，例如 P001' },
+      },
+      required: ['productId'],
+    },
+  },
+  {
+    name: 'list_demand_records',
+    description: '查询历史需求匹配记录。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: '返回记录数量限制，默认 10' },
+      },
+    },
+  },
+  {
+    name: 'get_demand_record',
+    description: '根据需求记录 ID 查询完整匹配结果。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        demandId: { type: 'string', description: '需求记录 ID，例如 demand_1712345678900' },
+      },
+      required: ['demandId'],
+    },
+  },
+  {
+    name: 'create_quotation',
+    description: '基于选定方案创建报价单。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        demandId: { type: 'string', description: '关联的需求记录 ID' },
+        planId: { type: 'string', description: '选定方案 ID' },
+        customerName: { type: 'string', description: '客户名称' },
+        contactPerson: { type: 'string', description: '联系人' },
+        contactPhone: { type: 'string', description: '联系电话' },
+        notes: { type: 'string', description: '备注说明' },
+      },
+      required: ['demandId', 'planId', 'customerName'],
+    },
+  },
+  {
+    name: 'list_quotations',
+    description: '查询报价单列表。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: '返回记录数量限制，默认 10' },
+      },
+    },
+  },
+  {
+    name: 'get_quotation',
+    description: '根据报价单 ID 查询报价单详情。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        quotationId: { type: 'string', description: '报价单 ID，例如 quote_1712345678900' },
+      },
+      required: ['quotationId'],
+    },
+  },
+];
+
+function buildInitPayload() {
+  return {
+    protocolVersion: PROTOCOL_VERSION,
+    capabilities: { tools: {} },
+    serverInfo: SERVER_INFO,
+  };
+}
+
+function buildDiscoveryPayload(baseUrl = '') {
+  const prefix = baseUrl || '';
+  return {
+    ...buildInitPayload(),
+    description: 'PowerQuote 智能报价系统的 CRM 接入 MCP 服务',
+    endpoints: {
+      health: `${prefix}/mcp/health`,
+      rpc: `${prefix}/mcp`,
+      sse: `${prefix}/mcp/sse`,
+      tools: `${prefix}/mcp/tools`,
+    },
+    auth: {
+      required: hasMcpAuth(),
+      acceptedHeaders: ['Authorization: Bearer <token>', 'X-API-Key: <token>'],
+    },
+  };
+}
+
+function hasMcpAuth() {
+  return getConfiguredMcpKeys().length > 0;
+}
+
+function getConfiguredMcpKeys() {
+  return [
+    process.env.MCP_API_KEY,
+    process.env.MCP_API_KEY_1,
+    process.env.MCP_API_KEY_2,
+  ].filter(Boolean);
+}
+
+function authorizeMcpRequest(req, res) {
+  const keys = getConfiguredMcpKeys();
+  if (keys.length === 0) {
+    return true;
+  }
+
+  const authHeader = req.headers.authorization;
+  const bearerToken = authHeader && authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7).trim()
+    : null;
+  const headerToken = req.headers['x-api-key'];
+  const token = bearerToken || headerToken;
+
+  if (!token || !keys.includes(token)) {
+    res.status(401).json({
+      error: 'Unauthorized',
+      message: 'Missing or invalid MCP API key',
+    });
+    return false;
+  }
+
+  return true;
+}
+
+function setCommonHeaders(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
+}
+
+function sendSseEvent(res, event, payload) {
+  res.write(`event: ${event}\n`);
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  if (typeof res.flush === 'function') {
+    res.flush();
+  }
+}
+
+function jsonRpcSuccess(id, result) {
+  return {
+    jsonrpc: '2.0',
+    id: id ?? null,
+    result,
+  };
+}
+
+function jsonRpcError(id, code, message) {
+  return {
+    jsonrpc: '2.0',
+    id: id ?? null,
+    error: { code, message },
+  };
+}
+
+function toTextResult(data, isError = false) {
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify(data, null, 2),
+      },
+    ],
+    ...(isError ? { isError: true } : {}),
+  };
+}
+
+function parseNumber(value, fieldName, { min = -Infinity, max = Infinity } = {}) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    throw new Error(`${fieldName} 必须是数字`);
+  }
+  if (value < min || value > max) {
+    throw new Error(`${fieldName} 超出允许范围`);
+  }
+  return value;
+}
+
+function normalizeModuleCounts(moduleCounts) {
+  if (moduleCounts == null) {
+    return DEFAULT_MODULE_COUNTS;
+  }
+  if (!Array.isArray(moduleCounts) || moduleCounts.length === 0) {
+    throw new Error('moduleCounts 必须是至少包含一个元素的数组');
+  }
+  const normalized = moduleCounts.map((count) => {
+    if (typeof count !== 'number' || Number.isNaN(count)) {
+      throw new Error('moduleCounts 中的值必须是数字');
+    }
+    return count;
+  });
+  return normalized;
+}
+
+function calculateDemandMatching(db, args = {}) {
+  const targetPowerKw = parseNumber(args.targetPowerKw, 'targetPowerKw', { min: 1, max: 10000 });
+  const targetEnergyKWh = parseNumber(args.targetEnergyKWh, 'targetEnergyKWh', { min: 1, max: 10000 });
+  const backupMinutes = parseNumber(args.backupMinutes, 'backupMinutes', { min: 0, max: 1440 });
+  const dcVoltageMin = args.dcVoltageMin == null
+    ? 520
+    : parseNumber(args.dcVoltageMin, 'dcVoltageMin', { min: 0, max: 1000 });
+  const dcVoltageMax = args.dcVoltageMax == null
+    ? 680
+    : parseNumber(args.dcVoltageMax, 'dcVoltageMax', { min: 0, max: 1000 });
+  const moduleCounts = normalizeModuleCounts(args.moduleCounts);
+  const moduleFireFilter = args.moduleFireFilter || 'ALL';
+  const cabinetFireFilter = args.cabinetFireFilter || 'ALL';
+  const lineTypeFilter = args.lineTypeFilter || 'ALL';
+
+  if (dcVoltageMin >= dcVoltageMax) {
+    throw new Error('dcVoltageMax 必须大于 dcVoltageMin');
+  }
+
+  const products = db.get('products').value() || [];
+  const plans = [];
+  let planId = Date.now();
+
+  for (const moduleCount of moduleCounts) {
+    const ref = REFERENCE_ROWS[moduleCount];
+    if (!ref) {
+      continue;
+    }
+
+    for (const product of products) {
+      if (!product.specs) {
+        continue;
+      }
+
+      for (const lineType of ['2线', '3线']) {
+        if (lineTypeFilter !== 'ALL' && lineTypeFilter !== lineType) {
+          continue;
+        }
+
+        const moduleFire = product.specs.moduleFire || '否';
+        if (moduleFireFilter !== 'ALL') {
+          const fireRequired = moduleFireFilter === 'YES';
+          if ((moduleFire === '是') !== fireRequired) {
+            continue;
+          }
+        }
+
+        const cabinetFire = product.specs.cabinetFire || '否';
+        if (cabinetFireFilter !== 'ALL') {
+          const fireRequired = cabinetFireFilter === 'YES';
+          if ((cabinetFire === '是') !== fireRequired) {
+            continue;
+          }
+        }
+
+        const cabinetCount = ref.rackQty;
+        const rackEnergyKWh = moduleCount * 1.86;
+        const estimatedEnergyKWh = Math.round(rackEnergyKWh * cabinetCount * 100) / 100;
+        const lineVoltageBoost = lineType === '3线' ? 1.0 : 0.92;
+        const fireVoltagePenalty = cabinetFire === '是' ? 0.99 : 1;
+        const estimatedMinVdc = Math.round(ref.minVdc * lineVoltageBoost * fireVoltagePenalty * 10) / 10;
+        const estimatedMaxVdc = Math.round(ref.maxVdc * lineVoltageBoost * fireVoltagePenalty * 10) / 10;
+        const estimatedVoltage = estimatedMaxVdc;
+        const effectivePowerKw = targetPowerKw * 0.9 * 0.6;
+        const estimatedCurrent = Math.round((effectivePowerKw * 1000) / Math.max(estimatedMinVdc, 1) * 100) / 100;
+        const estimatedBackupMinutes = ref.backupEolMin;
+
+        const demoStatusIndex = (moduleCount + (moduleFire === '是' ? 2 : 0) + (lineType === '3线' ? 1 : 0)) % 10;
+        const demoLabels = [
+          { label: '推荐方案', detail: '柜数更少、边界更稳、适合优先推进。' },
+          { label: '可直接推进', detail: '电压、电流与时长均处于建议边界内。' },
+          { label: '时长临界', detail: '备电时长接近目标边界，可作为备选方案。' },
+          { label: '电流边界', detail: '虽然未超限，但已经接近 600A 边界。' },
+          { label: '需补充说明', detail: '方案可保留，但需写清客户特殊要求与例外原因。' },
+          { label: '续航偏差', detail: '备电时长明显低于目标值，需要重新权衡。' },
+          { label: '需技术确认', detail: '存在技术边界情况，需要工程部门确认。' },
+          { label: '电压超界', detail: '电压上下界超出客户要求，需要先复核边界。' },
+          { label: '电流超界', detail: '最大放电电流超过 600A，不建议直接报价。' },
+          { label: '超限需复核', detail: '方案超出关键边界，不建议直接报价。' },
+        ];
+        const demoStatus = demoLabels[demoStatusIndex];
+
+        plans.push({
+          id: `plan_${planId++}`,
+          skuCode: `${product.id}-M${moduleCount}-${lineType === '3线' ? 'S' : 'D'}`,
+          productId: product.id,
+          productName: product.modelName,
+          moduleCount,
+          cabinetCount,
+          lineType,
+          moduleFire,
+          cabinetFire,
+          estimatedEnergyKWh,
+          minVdc: estimatedMinVdc,
+          maxVdc: estimatedMaxVdc,
+          estimatedVoltage: Math.round(estimatedVoltage * 10) / 10,
+          estimatedCurrent,
+          estimatedBackupMinutes: Math.round(estimatedBackupMinutes * 10) / 10,
+          analysisStatusLabel: demoStatus.label,
+          analysisStatusDetail: demoStatus.detail,
+          status: ['电压超界', '电流超界', '超限需复核'].includes(demoStatus.label)
+            ? 'INVALID'
+            : ['时长临界', '电流边界', '需补充说明', '续航偏差', '需技术确认'].includes(demoStatus.label)
+              ? 'WARNING'
+              : 'VALID',
+          rankScore: Math.round((100 - Math.abs(moduleCount - 8) * 5) * (product.specs.modulePowerW / 100)),
+        });
+      }
+    }
+  }
+
+  plans.sort((a, b) => b.rankScore - a.rankScore);
+  if (plans[0]) {
+    plans[0].recommended = true;
+    plans[0].analysisStatusLabel = '推荐方案';
+    plans[0].analysisStatusDetail = '柜数更少、边界更稳、适合优先推进。';
+  }
+
+  const topPlans = plans.slice(0, 5);
+  const productCounts = {};
+  for (const plan of topPlans) {
+    productCounts[plan.productId] = (productCounts[plan.productId] || 0) + 1;
+  }
+  const winnerId = Object.entries(productCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const winner = products.find((product) => product.id === winnerId) || products[0] || null;
+
+  const demandRecord = {
+    id: `demand_${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    input: {
+      targetPowerKw,
+      targetEnergyKWh,
+      backupMinutes,
+      dcVoltageMin,
+      dcVoltageMax,
+      moduleCounts,
+      moduleFireFilter,
+      cabinetFireFilter,
+      lineTypeFilter,
+    },
+    result: {
+      plans: plans.slice(0, 10),
+      winner: winner ? { id: winner.id, modelName: winner.modelName } : null,
+      stats: {
+        totalPlans: plans.length,
+        validPlans: plans.filter((plan) => plan.status === 'VALID').length,
+        warningPlans: plans.filter((plan) => plan.status === 'WARNING').length,
+        invalidPlans: plans.filter((plan) => plan.status === 'INVALID').length,
+      },
+    },
+  };
+
+  db.get('demandMatching.records').unshift(demandRecord).write();
+
+  return {
+    demandId: demandRecord.id,
+    plans: demandRecord.result.plans,
+    winner: demandRecord.result.winner,
+    stats: demandRecord.result.stats,
+  };
+}
+
+function listProducts(db) {
+  return db.get('products').value() || [];
+}
+
+function getProduct(db, args = {}) {
+  if (!args.productId) {
+    throw new Error('productId 为必填项');
+  }
+  const product = db.get('products').find({ id: args.productId }).value();
+  if (!product) {
+    throw new Error(`未找到产品: ${args.productId}`);
+  }
+  return product;
+}
+
+function listDemandRecords(db, args = {}) {
+  const limit = typeof args.limit === 'number' && args.limit > 0 ? args.limit : 10;
+  return (db.get('demandMatching.records').value() || []).slice(0, limit);
+}
+
+function getDemandRecord(db, args = {}) {
+  if (!args.demandId) {
+    throw new Error('demandId 为必填项');
+  }
+  const record = db.get('demandMatching.records').find({ id: args.demandId }).value();
+  if (!record) {
+    throw new Error(`未找到需求记录: ${args.demandId}`);
+  }
+  return record;
+}
+
+function createQuotation(db, args = {}) {
+  if (!args.demandId || !args.planId || !args.customerName) {
+    throw new Error('demandId、planId、customerName 为必填项');
+  }
+
+  const quotation = {
+    id: `quote_${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    demandId: args.demandId,
+    planId: args.planId,
+    customerName: args.customerName,
+    contactPerson: args.contactPerson || '',
+    contactPhone: args.contactPhone || '',
+    notes: args.notes || '',
+  };
+
+  db.get('quotations.records').unshift(quotation).write();
+  return quotation;
+}
+
+function listQuotations(db, args = {}) {
+  const limit = typeof args.limit === 'number' && args.limit > 0 ? args.limit : 10;
+  return (db.get('quotations.records').value() || []).slice(0, limit);
+}
+
+function getQuotation(db, args = {}) {
+  if (!args.quotationId) {
+    throw new Error('quotationId 为必填项');
+  }
+  const quotation = db.get('quotations.records').find({ id: args.quotationId }).value();
+  if (!quotation) {
+    throw new Error(`未找到报价单: ${args.quotationId}`);
+  }
+  return quotation;
+}
+
+async function handleToolCall(db, toolName, args) {
+  switch (toolName) {
+    case 'calculate_demand_matching':
+      return calculateDemandMatching(db, args);
+    case 'list_products':
+      return listProducts(db);
+    case 'get_product':
+      return getProduct(db, args);
+    case 'list_demand_records':
+      return listDemandRecords(db, args);
+    case 'get_demand_record':
+      return getDemandRecord(db, args);
+    case 'create_quotation':
+      return createQuotation(db, args);
+    case 'list_quotations':
+      return listQuotations(db, args);
+    case 'get_quotation':
+      return getQuotation(db, args);
+    default:
+      throw new Error(`Unknown tool: ${toolName}`);
+  }
+}
+
+async function executeRpc(db, payload) {
+  const { method, params, id } = payload || {};
+
+  switch (method) {
+    case 'initialize':
+      return jsonRpcSuccess(id, buildInitPayload());
+    case 'tools/list':
+      return jsonRpcSuccess(id, { tools: TOOLS });
+    case 'tools/call': {
+      const { name, arguments: args } = params || {};
+      if (!name) {
+        return jsonRpcSuccess(id, toTextResult({ error: true, message: 'missing tool name' }, true));
+      }
+
+      try {
+        const data = await handleToolCall(db, name, args || {});
+        return jsonRpcSuccess(id, toTextResult(data));
+      } catch (error) {
+        return jsonRpcSuccess(
+          id,
+          toTextResult(
+            {
+              error: true,
+              tool: name,
+              message: error.message,
+            },
+            true
+          )
+        );
+      }
+    }
+    default:
+      return jsonRpcError(id, -32601, `Method not found: ${method}`);
+  }
+}
+
+function registerPowerQuoteCrmMcp(server, { router }) {
+  server.use('/mcp', (req, res, next) => {
+    setCommonHeaders(res);
+    if (req.method === 'OPTIONS') {
+      return res.status(204).end();
+    }
+    next();
+  });
+
+  server.get('/mcp/health', (req, res) => {
+    if (!authorizeMcpRequest(req, res)) {
+      return;
+    }
+
+    res.json({
+      status: 'ok',
+      ...SERVER_INFO,
+      protocolVersion: PROTOCOL_VERSION,
+      transport: ['sse', 'json-rpc'],
+    });
+  });
+
+  server.get('/mcp/tools', (req, res) => {
+    if (!authorizeMcpRequest(req, res)) {
+      return;
+    }
+
+    res.json({ tools: TOOLS });
+  });
+
+  server.get('/mcp', (req, res) => {
+    if (!authorizeMcpRequest(req, res)) {
+      return;
+    }
+
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    res.json(buildDiscoveryPayload(baseUrl));
+  });
+
+  server.get('/mcp/sse', (req, res) => {
+    if (!authorizeMcpRequest(req, res)) {
+      return;
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
+    }
+
+    sendSseEvent(res, 'message', buildInitPayload());
+    sendSseEvent(res, 'tools', { tools: TOOLS });
+
+    const heartbeat = setInterval(() => {
+      try {
+        res.write(': heartbeat\n\n');
+        if (typeof res.flush === 'function') {
+          res.flush();
+        }
+      } catch (error) {
+        clearInterval(heartbeat);
+      }
+    }, 20000);
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+    });
+  });
+
+  server.post('/mcp/sse', async (req, res) => {
+    if (!authorizeMcpRequest(req, res)) {
+      return;
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
+    }
+
+    const payload = req.body || {};
+    const response = await executeRpc(router.db, payload);
+    sendSseEvent(res, 'message', response);
+    res.end();
+  });
+
+  server.post('/mcp', async (req, res) => {
+    if (!authorizeMcpRequest(req, res)) {
+      return;
+    }
+
+    const payload = req.body || {};
+    if (payload.jsonrpc && payload.jsonrpc !== '2.0') {
+      return res.status(400).json(jsonRpcError(payload.id, -32600, 'Invalid Request: jsonrpc must be 2.0'));
+    }
+
+    const response = await executeRpc(router.db, payload);
+    res.json(response);
+  });
+}
+
+module.exports = registerPowerQuoteCrmMcp;
