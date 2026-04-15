@@ -4,6 +4,7 @@ const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
 const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
 const { isInitializeRequest } = require('@modelcontextprotocol/sdk/types.js');
 
+const LEGACY_PROTOCOL_VERSION = '2024-11-05';
 const SERVER_INFO = {
   name: 'powerquote-mcp',
   version: '1.2.0',
@@ -211,6 +212,18 @@ function buildInfoPayload(req) {
   };
 }
 
+function buildLegacyInitPayload() {
+  return {
+    protocolVersion: LEGACY_PROTOCOL_VERSION,
+    capabilities: { tools: {} },
+    serverInfo: SERVER_INFO,
+  };
+}
+
+function buildLegacyToolListPayload() {
+  return { tools: TOOLS };
+}
+
 function createRpcError(message, code = -32000) {
   return {
     jsonrpc: '2.0',
@@ -246,6 +259,14 @@ function serializeToolError(error, toolName) {
       },
     ],
     isError: true,
+  };
+}
+
+function jsonRpcSuccess(id, result) {
+  return {
+    jsonrpc: '2.0',
+    id: id ?? null,
+    result,
   };
 }
 
@@ -503,6 +524,29 @@ function getQuotation(db, args = {}) {
   return quotation;
 }
 
+async function handleToolCall(db, toolName, args) {
+  switch (toolName) {
+    case 'calculate_demand_matching':
+      return calculateDemandMatching(db, args);
+    case 'list_products':
+      return listProducts(db);
+    case 'get_product':
+      return getProduct(db, args);
+    case 'list_demand_records':
+      return listDemandRecords(db, args);
+    case 'get_demand_record':
+      return getDemandRecord(db, args);
+    case 'create_quotation':
+      return createQuotation(db, args);
+    case 'list_quotations':
+      return listQuotations(db, args);
+    case 'get_quotation':
+      return getQuotation(db, args);
+    default:
+      throw new Error(`Unknown tool: ${toolName}`);
+  }
+}
+
 function createPowerQuoteMcpServer(db) {
   const mcpServer = new McpServer(SERVER_INFO, {
     capabilities: {
@@ -641,6 +685,50 @@ function createPowerQuoteMcpServer(db) {
   return mcpServer;
 }
 
+function sendLegacySseEvent(res, event, payload) {
+  res.write(`event: ${event}\n`);
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  if (typeof res.flush === 'function') {
+    res.flush();
+  }
+}
+
+async function executeLegacyRpc(db, payload) {
+  const { method, params, id } = payload || {};
+
+  switch (method) {
+    case 'initialize':
+      return jsonRpcSuccess(id, buildLegacyInitPayload());
+    case 'tools/list':
+      return jsonRpcSuccess(id, buildLegacyToolListPayload());
+    case 'tools/call': {
+      const { name, arguments: args } = params || {};
+      if (!name) {
+        return jsonRpcSuccess(
+          id,
+          serializeToolError(new Error('missing tool name'), 'unknown')
+        );
+      }
+
+      try {
+        const data = await handleToolCall(db, name, args || {});
+        return jsonRpcSuccess(id, serializeToolResult(data));
+      } catch (error) {
+        return jsonRpcSuccess(id, serializeToolError(error, name));
+      }
+    }
+    default:
+      return {
+        jsonrpc: '2.0',
+        id: id ?? null,
+        error: {
+          code: -32601,
+          message: `Method not found: ${method}`,
+        },
+      };
+  }
+}
+
 function cleanupSession(sessions, sessionId) {
   const entry = sessions.get(sessionId);
   if (!entry || entry.cleanedUp) {
@@ -752,9 +840,55 @@ function registerPowerQuoteCrmMcp(server, { router }) {
     await handleStreamableRequest(req, res, router.db, streamableSessions);
   });
 
-  // 为仍然写死 /mcp/sse 的远端客户端保留一个官方 Streamable HTTP 别名。
-  server.all('/mcp/sse', async (req, res) => {
-    await handleStreamableRequest(req, res, router.db, streamableSessions);
+  // 兼容纷享销客等仍使用 2024-11-05 老式 SSE 握手的客户端。
+  server.get('/mcp/sse', async (req, res) => {
+    if (!authorizeMcpRequest(req, res)) {
+      return;
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
+    }
+
+    sendLegacySseEvent(res, 'message', buildLegacyInitPayload());
+    sendLegacySseEvent(res, 'tools', buildLegacyToolListPayload());
+
+    const heartbeat = setInterval(() => {
+      try {
+        res.write(': heartbeat\n\n');
+        if (typeof res.flush === 'function') {
+          res.flush();
+        }
+      } catch {
+        clearInterval(heartbeat);
+      }
+    }, 20000);
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+    });
+  });
+
+  server.post('/mcp/sse', async (req, res) => {
+    if (!authorizeMcpRequest(req, res)) {
+      return;
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
+    }
+
+    const response = await executeLegacyRpc(router.db, req.body || {});
+    sendLegacySseEvent(res, 'message', response);
+    res.end();
   });
 }
 
