@@ -454,7 +454,7 @@ module.exports = function setupWebhook(server) {
 </div>
 </body></html>`);
     }
-  });
+  };
 
   // 同时注册 GET 和 POST 路由
   server.get('/api/webhook/fxiaoke-sync', handleSync);
