@@ -14,8 +14,8 @@ import type { GeneratedSkuPlan, ProductModel } from '../types';
 
 type RiskLevel = 'HIGH' | 'MEDIUM' | 'LOW';
 
-type YesNoAll = 'ALL' | 'YES' | 'NO';
-type LineTypeFilter = 'ALL' | '2线' | '3线';
+type YesNoAll = '全部' | '带消防' | '不带消防';
+type LineTypeFilter = '全部' | '2线' | '3线';
 
 interface RecommendedProduct {
   product: ProductModel;
@@ -121,13 +121,13 @@ function buildSkuPlans(
     specialRequirements: string;
   },
 ): PreviewSkuPlan[] {
-  const moduleFireOptions = form.moduleFireFilter === 'ALL'
+  const moduleFireOptions = form.moduleFireFilter === '全部'
     ? [true, false]
-    : [form.moduleFireFilter === 'YES'];
-  const cabinetFireOptions = form.cabinetFireFilter === 'ALL'
+    : [form.moduleFireFilter === '带消防'];
+  const cabinetFireOptions = form.cabinetFireFilter === '全部'
     ? [true, false]
-    : [form.cabinetFireFilter === 'YES'];
-  const lineTypeOptions = form.lineTypeFilter === 'ALL'
+    : [form.cabinetFireFilter === '带消防'];
+  const lineTypeOptions = form.lineTypeFilter === '全部'
     ? (['2线', '3线'] as const)
     : ([form.lineTypeFilter] as const);
 
@@ -284,9 +284,9 @@ export function InquiryMatching() {
     topology: '模块化 UPS',
     specialRequirements: '客户要求高海拔部署，允许超限方案展示，但必须标红并走技术复核。',
     moduleCounts: [8, 9, 10, 11],
-    moduleFireFilter: 'ALL' as YesNoAll,
-    cabinetFireFilter: 'ALL' as YesNoAll,
-    lineTypeFilter: 'ALL' as LineTypeFilter,
+    moduleFireFilter: '全部' as YesNoAll,
+    cabinetFireFilter: '全部' as YesNoAll,
+    lineTypeFilter: '全部' as LineTypeFilter,
   };
   const [form, setForm] = useState(initialForm);
   const [appliedForm, setAppliedForm] = useState(initialForm);
@@ -393,23 +393,23 @@ export function InquiryMatching() {
               <label className="text-xs font-medium text-slate-600">
                 模组消防
                 <select className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white" value={form.moduleFireFilter} onChange={(e) => setForm({ ...form, moduleFireFilter: e.target.value as YesNoAll })}>
-                  <option value="ALL">全部</option>
-                  <option value="YES">带消防</option>
-                  <option value="NO">不带消防</option>
+                  <option value="全部">全部</option>
+                  <option value="带消防">带消防</option>
+                  <option value="不带消防">不带消防</option>
                 </select>
               </label>
               <label className="text-xs font-medium text-slate-600">
                 机柜消防
                 <select className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white" value={form.cabinetFireFilter} onChange={(e) => setForm({ ...form, cabinetFireFilter: e.target.value as YesNoAll })}>
-                  <option value="ALL">全部</option>
-                  <option value="YES">带消防</option>
-                  <option value="NO">不带消防</option>
+                  <option value="全部">全部</option>
+                  <option value="带消防">带消防</option>
+                  <option value="不带消防">不带消防</option>
                 </select>
               </label>
               <label className="text-xs font-medium text-slate-600">
                 接线方式
                 <select className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white" value={form.lineTypeFilter} onChange={(e) => setForm({ ...form, lineTypeFilter: e.target.value as LineTypeFilter })}>
-                  <option value="ALL">全部</option>
+                  <option value="全部">全部</option>
                   <option value="2线">2线</option>
                   <option value="3线">3线</option>
                 </select>

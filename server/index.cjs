@@ -66,6 +66,30 @@ const REFERENCE_ROWS = {
   12: { rackQty: 3, minVdc: 537.6, maxVdc: 662.4, backupEolMin: 9.58,  maxCurrent: 563.97 },
 };
 
+function normalizeFireFilter(value) {
+  if (value == null || value === '') return '全部';
+  const normalized = String(value).trim();
+  return {
+    ALL: '全部',
+    YES: '带消防',
+    NO: '不带消防',
+    全部: '全部',
+    带消防: '带消防',
+    不带消防: '不带消防',
+  }[normalized] || normalized;
+}
+
+function normalizeLineTypeFilter(value) {
+  if (value == null || value === '') return '全部';
+  const normalized = String(value).trim();
+  return {
+    ALL: '全部',
+    全部: '全部',
+    '2线': '2线',
+    '3线': '3线',
+  }[normalized] || normalized;
+}
+
 // 需求匹配计算
 server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams, (req, res) => {
   const {
@@ -75,11 +99,15 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
     dcVoltageMin,
     dcVoltageMax,
     moduleCounts,
-    moduleFireFilter = 'ALL',
-    cabinetFireFilter = 'ALL',
-    lineTypeFilter = 'ALL',
+    moduleFireFilter = '全部',
+    cabinetFireFilter = '全部',
+    lineTypeFilter = '全部',
     specialRequirements = '',
   } = req.body;
+
+  const normalizedModuleFireFilter = normalizeFireFilter(moduleFireFilter);
+  const normalizedCabinetFireFilter = normalizeFireFilter(cabinetFireFilter);
+  const normalizedLineTypeFilter = normalizeLineTypeFilter(lineTypeFilter);
 
   const db = router.db;
   const products = db.get('products').value();
@@ -94,17 +122,17 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
 
       for (const lineType of ['2线', '3线']) {
         // 过滤逻辑
-        if (lineTypeFilter !== 'ALL' && lineTypeFilter !== lineType) continue;
+        if (normalizedLineTypeFilter !== '全部' && normalizedLineTypeFilter !== lineType) continue;
 
         const moduleFire = product.specs.moduleFire || '否';
-        if (moduleFireFilter !== 'ALL') {
-          const fireRequired = moduleFireFilter === 'YES';
+        if (normalizedModuleFireFilter !== '全部') {
+          const fireRequired = normalizedModuleFireFilter === '带消防';
           if ((moduleFire === '是') !== fireRequired) continue;
         }
 
         const cabinetFire = product.specs.cabinetFire || '否';
-        if (cabinetFireFilter !== 'ALL') {
-          const fireRequired = cabinetFireFilter === 'YES';
+        if (normalizedCabinetFireFilter !== '全部') {
+          const fireRequired = normalizedCabinetFireFilter === '带消防';
           if ((cabinetFire === '是') !== fireRequired) continue;
         }
 

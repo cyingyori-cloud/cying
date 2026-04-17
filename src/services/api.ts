@@ -73,9 +73,9 @@ export interface DemandMatchingParams {
   topology: string;
   specialRequirements: string;
   moduleCounts: number[];
-  moduleFireFilter: 'ALL' | 'YES' | 'NO';
-  cabinetFireFilter: 'ALL' | 'YES' | 'NO';
-  lineTypeFilter: 'ALL' | '2线' | '3线';
+  moduleFireFilter: '全部' | '带消防' | '不带消防';
+  cabinetFireFilter: '全部' | '带消防' | '不带消防';
+  lineTypeFilter: '全部' | '2线' | '3线';
 }
 
 export interface DemandRecord {

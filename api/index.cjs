@@ -22,6 +22,30 @@ const REFERENCE_ROWS = {
   16: { rackQty: 4, minVdc: 716.8, maxVdc: 883.2, backupEolMin: 12.8 },
 };
 
+function normalizeFireFilter(value) {
+  if (value == null || value === '') return '全部';
+  const normalized = String(value).trim();
+  return {
+    ALL: '全部',
+    YES: '带消防',
+    NO: '不带消防',
+    全部: '全部',
+    带消防: '带消防',
+    不带消防: '不带消防',
+  }[normalized] || normalized;
+}
+
+function normalizeLineTypeFilter(value) {
+  if (value == null || value === '') return '全部';
+  const normalized = String(value).trim();
+  return {
+    ALL: '全部',
+    全部: '全部',
+    '2线': '2线',
+    '3线': '3线',
+  }[normalized] || normalized;
+}
+
 const server = jsonServer.create();
 const router = jsonServer.router(path.join(__dirname, 'db/db.json'));
 
@@ -72,10 +96,14 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
     dcVoltageMin,
     dcVoltageMax,
     moduleCounts,
-    moduleFireFilter = 'ALL',
-    cabinetFireFilter = 'ALL',
-    lineTypeFilter = 'ALL',
+    moduleFireFilter = '全部',
+    cabinetFireFilter = '全部',
+    lineTypeFilter = '全部',
   } = req.body;
+
+  const normalizedModuleFireFilter = normalizeFireFilter(moduleFireFilter);
+  const normalizedCabinetFireFilter = normalizeFireFilter(cabinetFireFilter);
+  const normalizedLineTypeFilter = normalizeLineTypeFilter(lineTypeFilter);
 
   const db = router.db;
   const products = db.get('products').value();
@@ -88,17 +116,17 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
       if (!product.specs) continue;
 
       for (const lineType of ['2线', '3线']) {
-        if (lineTypeFilter !== 'ALL' && lineTypeFilter !== lineType) continue;
+        if (normalizedLineTypeFilter !== '全部' && normalizedLineTypeFilter !== lineType) continue;
 
         const moduleFire = product.specs.moduleFire || '否';
-        if (moduleFireFilter !== 'ALL') {
-          const fireRequired = moduleFireFilter === 'YES';
+        if (normalizedModuleFireFilter !== '全部') {
+          const fireRequired = normalizedModuleFireFilter === '带消防';
           if ((moduleFire === '是') !== fireRequired) continue;
         }
 
         const cabinetFire = product.specs.cabinetFire || '否';
-        if (cabinetFireFilter !== 'ALL') {
-          const fireRequired = cabinetFireFilter === 'YES';
+        if (normalizedCabinetFireFilter !== '全部') {
+          const fireRequired = normalizedCabinetFireFilter === '带消防';
           if ((cabinetFire === '是') !== fireRequired) continue;
         }
 
@@ -186,7 +214,12 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
   const demandRecord = {
     id: `demand_${Date.now()}`,
     createdAt: new Date().toISOString(),
-    input: req.body,
+    input: {
+      ...req.body,
+      moduleFireFilter: normalizedModuleFireFilter,
+      cabinetFireFilter: normalizedCabinetFireFilter,
+      lineTypeFilter: normalizedLineTypeFilter,
+    },
     result: {
       plans: plans.slice(0, 10),
       winner: { id: winner.id, modelName: winner.modelName },
