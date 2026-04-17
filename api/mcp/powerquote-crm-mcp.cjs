@@ -11,8 +11,11 @@ const SERVER_INFO = {
   version: '1.2.0',
 };
 const SDK_VERSION = '1.29.0';
+const DISPLAY_FIRE_FILTER_OPTIONS = ['全部', '带消防', '不带消防'];
+const DISPLAY_LINE_TYPE_OPTIONS = ['全部', '2线', '3线'];
 
-const DEFAULT_MODULE_COUNTS = [8, 9, 10, 11, 12, 14, 16];
+// 与 InquiryMatching 页面当前的默认候选保持一致，对外部 MCP 不暴露该技术参数。
+const DEFAULT_MODULE_COUNTS = [8, 9, 10, 11];
 const REFERENCE_ROWS = {
   8: { rackQty: 4, minVdc: 358.4, maxVdc: 441.6, backupEolMin: 8.5 },
   9: { rackQty: 4, minVdc: 403.2, maxVdc: 496.8, backupEolMin: 9.6 },
@@ -35,25 +38,20 @@ const TOOLS = [
         backupMinutes: { type: 'number', description: '备电时长，单位分钟。例如 120' },
         dcVoltageMin: { type: 'number', description: 'DC 电压下限，单位 V。例如 520' },
         dcVoltageMax: { type: 'number', description: 'DC 电压上限，单位 V。例如 680' },
-        moduleCounts: {
-          type: 'array',
-          items: { type: 'number' },
-          description: '模组数量候选列表。例如 [8, 9, 10, 11]',
-        },
         moduleFireFilter: {
           type: 'string',
-          enum: ['ALL', 'YES', 'NO'],
-          description: '模组消防过滤，默认 ALL',
+          enum: DISPLAY_FIRE_FILTER_OPTIONS,
+          description: '模组消防过滤，可选值：全部、带消防、不带消防。默认 全部',
         },
         cabinetFireFilter: {
           type: 'string',
-          enum: ['ALL', 'YES', 'NO'],
-          description: '柜体消防过滤，默认 ALL',
+          enum: DISPLAY_FIRE_FILTER_OPTIONS,
+          description: '柜体消防过滤，可选值：全部、带消防、不带消防。默认 全部',
         },
         lineTypeFilter: {
           type: 'string',
-          enum: ['ALL', '2线', '3线'],
-          description: '接线方式过滤，默认 ALL',
+          enum: DISPLAY_LINE_TYPE_OPTIONS,
+          description: '接线方式过滤，可选值：全部、2线、3线。默认 全部',
         },
       },
       required: ['targetPowerKw', 'targetEnergyKWh', 'backupMinutes'],
@@ -251,6 +249,48 @@ function serializeToolError(error, toolName) {
   };
 }
 
+function normalizeFireFilterInput(value, fieldName) {
+  if (value == null || value === '') {
+    return '全部';
+  }
+
+  const normalized = String(value).trim();
+  const mapping = {
+    ALL: '全部',
+    YES: '带消防',
+    NO: '不带消防',
+    全部: '全部',
+    带消防: '带消防',
+    不带消防: '不带消防',
+  };
+
+  if (!mapping[normalized]) {
+    throw new Error(`${fieldName} 仅支持：全部、带消防、不带消防`);
+  }
+
+  return mapping[normalized];
+}
+
+function normalizeLineTypeFilterInput(value, fieldName) {
+  if (value == null || value === '') {
+    return '全部';
+  }
+
+  const normalized = String(value).trim();
+  const mapping = {
+    ALL: '全部',
+    全部: '全部',
+    '2线': '2线',
+    '3线': '3线',
+  };
+
+  if (!mapping[normalized]) {
+    throw new Error(`${fieldName} 仅支持：全部、2线、3线`);
+  }
+
+  return mapping[normalized];
+}
+
 function parseNumber(value, fieldName, { min = -Infinity, max = Infinity } = {}) {
   if (typeof value !== 'number' || Number.isNaN(value)) {
     throw new Error(`${fieldName} 必须是数字`);
@@ -287,9 +327,9 @@ function calculateDemandMatching(db, args = {}) {
     ? 680
     : parseNumber(args.dcVoltageMax, 'dcVoltageMax', { min: 0, max: 1000 });
   const moduleCounts = normalizeModuleCounts(args.moduleCounts);
-  const moduleFireFilter = args.moduleFireFilter || 'ALL';
-  const cabinetFireFilter = args.cabinetFireFilter || 'ALL';
-  const lineTypeFilter = args.lineTypeFilter || 'ALL';
+  const moduleFireFilter = normalizeFireFilterInput(args.moduleFireFilter, 'moduleFireFilter');
+  const cabinetFireFilter = normalizeFireFilterInput(args.cabinetFireFilter, 'cabinetFireFilter');
+  const lineTypeFilter = normalizeLineTypeFilterInput(args.lineTypeFilter, 'lineTypeFilter');
 
   if (dcVoltageMin >= dcVoltageMax) {
     throw new Error('dcVoltageMax 必须大于 dcVoltageMin');
@@ -311,21 +351,21 @@ function calculateDemandMatching(db, args = {}) {
       }
 
       for (const lineType of ['2线', '3线']) {
-        if (lineTypeFilter !== 'ALL' && lineTypeFilter !== lineType) {
+        if (lineTypeFilter !== '全部' && lineTypeFilter !== lineType) {
           continue;
         }
 
         const moduleFire = product.specs.moduleFire || '否';
-        if (moduleFireFilter !== 'ALL') {
-          const fireRequired = moduleFireFilter === 'YES';
+        if (moduleFireFilter !== '全部') {
+          const fireRequired = moduleFireFilter === '带消防';
           if ((moduleFire === '是') !== fireRequired) {
             continue;
           }
         }
 
         const cabinetFire = product.specs.cabinetFire || '否';
-        if (cabinetFireFilter !== 'ALL') {
-          const fireRequired = cabinetFireFilter === 'YES';
+        if (cabinetFireFilter !== '全部') {
+          const fireRequired = cabinetFireFilter === '带消防';
           if ((cabinetFire === '是') !== fireRequired) {
             continue;
           }
@@ -522,10 +562,9 @@ function createPowerQuoteMcpServer(db) {
         backupMinutes: z.number().min(0).max(1440).describe('备电时长，单位分钟。例如 120'),
         dcVoltageMin: z.number().min(0).max(1000).optional().default(520).describe('DC 电压下限，单位 V。例如 520'),
         dcVoltageMax: z.number().min(0).max(1000).optional().default(680).describe('DC 电压上限，单位 V。例如 680'),
-        moduleCounts: z.array(z.number()).min(1).optional().default(DEFAULT_MODULE_COUNTS).describe('模组数量候选列表'),
-        moduleFireFilter: z.enum(['ALL', 'YES', 'NO']).optional().default('ALL').describe('模组消防过滤'),
-        cabinetFireFilter: z.enum(['ALL', 'YES', 'NO']).optional().default('ALL').describe('柜体消防过滤'),
-        lineTypeFilter: z.enum(['ALL', '2线', '3线']).optional().default('ALL').describe('接线方式过滤'),
+        moduleFireFilter: z.enum(DISPLAY_FIRE_FILTER_OPTIONS).optional().default('全部').describe('模组消防过滤'),
+        cabinetFireFilter: z.enum(DISPLAY_FIRE_FILTER_OPTIONS).optional().default('全部').describe('柜体消防过滤'),
+        lineTypeFilter: z.enum(DISPLAY_LINE_TYPE_OPTIONS).optional().default('全部').describe('接线方式过滤'),
       },
     },
     async (args) => {

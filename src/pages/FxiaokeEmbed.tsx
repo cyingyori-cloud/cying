@@ -8,8 +8,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, XCircle, AlertTriangle, Star } from 'lucide-react';
 
-type YesNoAll = 'ALL' | 'YES' | 'NO';
-type LineTypeFilter = 'ALL' | '2线' | '3线';
+type YesNoAll = '全部' | '带消防' | '不带消防';
+type LineTypeFilter = '全部' | '2线' | '3线';
 
 interface FormData {
   targetPowerKw: number;
@@ -52,13 +52,13 @@ const REFERENCE_ROWS: Record<number, { rackQty: number; minVdc: number; maxVdc: 
 };
 
 function buildSkuPlans(form: FormData): SkuPlan[] {
-  const moduleFireOptions = form.moduleFireFilter === 'ALL'
+  const moduleFireOptions = form.moduleFireFilter === '全部'
     ? [true, false]
-    : [form.moduleFireFilter === 'YES'];
-  const cabinetFireOptions = form.cabinetFireFilter === 'ALL'
+    : [form.moduleFireFilter === '带消防'];
+  const cabinetFireOptions = form.cabinetFireFilter === '全部'
     ? [true, false]
-    : [form.cabinetFireFilter === 'YES'];
-  const lineTypeOptions = form.lineTypeFilter === 'ALL'
+    : [form.cabinetFireFilter === '带消防'];
+  const lineTypeOptions = form.lineTypeFilter === '全部'
     ? (['2线', '3线'] as const)
     : ([form.lineTypeFilter] as const);
 
@@ -176,9 +176,9 @@ export default function FxiaokeEmbed() {
     dcVoltageMin: 520,
     dcVoltageMax: 680,
     moduleCounts: [8, 9, 10, 11],
-    moduleFireFilter: 'ALL',
-    cabinetFireFilter: 'ALL',
-    lineTypeFilter: 'ALL',
+    moduleFireFilter: '全部',
+    cabinetFireFilter: '全部',
+    lineTypeFilter: '全部',
   });
 
   const [appliedForm, setAppliedForm] = useState(form);

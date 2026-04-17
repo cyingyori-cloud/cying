@@ -63,12 +63,14 @@ POST /api/demand-matching
   "dcVoltageMax": 680,
   "topology": "模块化 UPS",
   "specialRequirements": "",
-  "moduleCounts": [8, 9, 10, 11],
   "moduleFireFilter": "ALL",
   "cabinetFireFilter": "ALL",
   "lineTypeFilter": "ALL"
 }
 ```
+
+> 说明：
+> - 模组数量候选由系统内部默认策略控制，当前默认按 `[8, 9, 10, 11]` 枚举，不再要求外部调用方显式传入。
 
 ### 方案计算（核心接口）
 ```
