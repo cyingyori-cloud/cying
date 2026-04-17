@@ -233,6 +233,46 @@ function serializeToolResult(data) {
   };
 }
 
+function stripSkuFromPlan(plan) {
+  if (!plan || typeof plan !== 'object') {
+    return plan;
+  }
+
+  const { skuCode, ...rest } = plan;
+  return rest;
+}
+
+function sanitizeMcpPayload(data) {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map((item) => sanitizeMcpPayload(item));
+  }
+
+  // 候选方案列表直接返回时，去掉 skuCode
+  if ('plans' in data && Array.isArray(data.plans)) {
+    return {
+      ...data,
+      plans: data.plans.map((plan) => stripSkuFromPlan(plan)),
+    };
+  }
+
+  // 需求记录 / 历史记录里嵌套的 result.plans，也统一去掉 skuCode
+  if ('result' in data && data.result && typeof data.result === 'object' && Array.isArray(data.result.plans)) {
+    return {
+      ...data,
+      result: {
+        ...data.result,
+        plans: data.result.plans.map((plan) => stripSkuFromPlan(plan)),
+      },
+    };
+  }
+
+  return data;
+}
+
 function serializeToolError(error, toolName) {
   return {
     content: [
@@ -569,7 +609,7 @@ function createPowerQuoteMcpServer(db) {
     },
     async (args) => {
       try {
-        return serializeToolResult(calculateDemandMatching(db, args));
+        return serializeToolResult(sanitizeMcpPayload(calculateDemandMatching(db, args)));
       } catch (error) {
         return serializeToolError(error, 'calculate_demand_matching');
       }
@@ -609,7 +649,7 @@ function createPowerQuoteMcpServer(db) {
         limit: z.number().int().positive().optional().describe('返回记录数量限制，默认 10'),
       },
     },
-    async (args) => serializeToolResult(listDemandRecords(db, args))
+    async (args) => serializeToolResult(sanitizeMcpPayload(listDemandRecords(db, args)))
   );
 
   mcpServer.registerTool(
@@ -622,7 +662,7 @@ function createPowerQuoteMcpServer(db) {
     },
     async (args) => {
       try {
-        return serializeToolResult(getDemandRecord(db, args));
+        return serializeToolResult(sanitizeMcpPayload(getDemandRecord(db, args)));
       } catch (error) {
         return serializeToolError(error, 'get_demand_record');
       }
