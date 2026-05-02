@@ -146,6 +146,20 @@ export interface CandidatePlan {
   warnings: string[];
   rankScore: number;
   estimatedCost: number;
+  profit: {
+    level1: number;
+    level2: number;
+    level3: number;
+  };
+  grossMargin: {
+    level1: number;
+    level2: number;
+    level3: number;
+  };
+  suggestedTier: 'level1' | 'level2' | 'level3';
+  suggestedPrice: number;
+  suggestedProfit: number;
+  suggestedGrossMargin: number;
   recommended: boolean;
   pricingTiers: {
     level1: number;

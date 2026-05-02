@@ -90,6 +90,85 @@ function normalizeLineTypeFilter(value) {
   }[normalized] || normalized;
 }
 
+function enrichPlanFinancials(plan, product, targetPowerKw, backupMinutes) {
+  if (!plan || typeof plan !== 'object') return plan;
+
+  const moduleCount = Number(plan.moduleCount) || 0;
+  const cabinetCount = Number(plan.cabinetCount) || 0;
+  const backupFactor = Math.max((Number(backupMinutes) || 0) / 15, 0.8);
+  const baseCostSeed = product?.baseCost ?? product?.basePrice ?? 0;
+  const fallbackBaseCost = Math.round(baseCostSeed * 0.82);
+  const normalizedBaseCost = product?.baseCost ?? fallbackBaseCost;
+  const baseCost = Math.round(normalizedBaseCost * (moduleCount / 10) * cabinetCount * backupFactor);
+  const extraCost = (plan.moduleFire === '是' ? 6000 : 0)
+    + (plan.cabinetFire === '是' ? 9000 : 0)
+    + (plan.lineType === '3线' ? 3000 : 0);
+  const estimatedCost = plan.estimatedCost ?? (baseCost + extraCost);
+  const pricingTiers = plan.pricingTiers ?? {
+    level1: Math.round(estimatedCost * 1.2),
+    level2: Math.round(estimatedCost * 1.15),
+    level3: Math.round(estimatedCost * 1.1),
+  };
+  const profit = plan.profit ?? {
+    level1: pricingTiers.level1 - estimatedCost,
+    level2: pricingTiers.level2 - estimatedCost,
+    level3: pricingTiers.level3 - estimatedCost,
+  };
+  const grossMargin = plan.grossMargin ?? {
+    level1: pricingTiers.level1 > 0 ? Number((profit.level1 / pricingTiers.level1).toFixed(4)) : 0,
+    level2: pricingTiers.level2 > 0 ? Number((profit.level2 / pricingTiers.level2).toFixed(4)) : 0,
+    level3: pricingTiers.level3 > 0 ? Number((profit.level3 / pricingTiers.level3).toFixed(4)) : 0,
+  };
+  const suggestedTier = plan.suggestedTier || 'level1';
+
+  return {
+    ...plan,
+    estimatedCost,
+    pricingTiers,
+    profit,
+    grossMargin,
+    suggestedTier,
+    suggestedPrice: pricingTiers[suggestedTier] ?? pricingTiers.level1,
+    suggestedProfit: profit[suggestedTier] ?? profit.level1,
+    suggestedGrossMargin: grossMargin[suggestedTier] ?? grossMargin.level1,
+    targetPowerKw,
+  };
+}
+
+function enrichPlansFinancials(plans, products, targetPowerKw, backupMinutes) {
+  return (plans || []).map((plan) => {
+    const product = (products || []).find((item) => item.id === plan.productId);
+    return enrichPlanFinancials(plan, product, targetPowerKw, backupMinutes);
+  });
+}
+
+function enrichDemandRecord(record, products) {
+  if (!record || typeof record !== 'object') return record;
+
+  const input = record.input || {};
+  const result = record.result || {};
+  const enrichedPlans = enrichPlansFinancials(
+    Array.isArray(result.plans) ? result.plans : [],
+    products,
+    input.targetPowerKw,
+    input.backupMinutes
+  );
+
+  return {
+    ...record,
+    result: {
+      ...result,
+      plans: enrichedPlans,
+      stats: result.stats || {
+        totalPlans: enrichedPlans.length,
+        validPlans: enrichedPlans.filter((plan) => plan.status === 'VALID').length,
+        warningPlans: enrichedPlans.filter((plan) => plan.status === 'WARNING').length,
+        invalidPlans: enrichedPlans.filter((plan) => plan.status === 'INVALID').length,
+      },
+    },
+  };
+}
+
 // 需求匹配计算
 server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams, (req, res) => {
   const {
@@ -212,8 +291,10 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
     plans[0].analysisStatusDetail = '柜数更少、边界更稳、适合优先推进。';
   }
 
+  const enrichedPlans = enrichPlansFinancials(plans, products, targetPowerKw, backupMinutes);
+
   // 选择最优产品族
-  const topPlans = plans.slice(0, 5);
+  const topPlans = enrichedPlans.slice(0, 5);
   const productCounts = {};
   for (const p of topPlans) {
     productCounts[p.productId] = (productCounts[p.productId] || 0) + 1;
@@ -227,13 +308,13 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
     createdAt: new Date().toISOString(),
     input: req.body,
     result: {
-      plans: plans.slice(0, 10),
+      plans: enrichedPlans.slice(0, 10),
       winner: { id: winner.id, modelName: winner.modelName },
       stats: {
-        totalPlans: plans.length,
-        validPlans: plans.filter(p => p.status === 'VALID').length,
-        warningPlans: plans.filter(p => p.status === 'WARNING').length,
-        invalidPlans: plans.filter(p => p.status === 'INVALID').length,
+        totalPlans: enrichedPlans.length,
+        validPlans: enrichedPlans.filter(p => p.status === 'VALID').length,
+        warningPlans: enrichedPlans.filter(p => p.status === 'WARNING').length,
+        invalidPlans: enrichedPlans.filter(p => p.status === 'INVALID').length,
       },
     },
   };
@@ -251,18 +332,20 @@ server.post('/api/demand-matching/calculate', requireAuth, validateDemandParams,
 // 获取需求记录列表
 server.get('/api/demand-matching', requireAuth, (req, res) => {
   const db = router.db;
+  const products = db.get('products').value();
   const records = db.get('demandMatching.records').value();
-  res.json(records);
+  res.json((records || []).map((record) => enrichDemandRecord(record, products)));
 });
 
 // 获取单个需求记录
 server.get('/api/demand-matching/:id', requireAuth, (req, res) => {
   const db = router.db;
+  const products = db.get('products').value();
   const record = db.get('demandMatching.records').find({ id: req.params.id }).value();
   if (!record) {
     return res.status(404).json({ error: 'Demand record not found' });
   }
-  res.json(record);
+  res.json(enrichDemandRecord(record, products));
 });
 
 // 报价单接口
